@@ -3,8 +3,8 @@
 
 [![img](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-This project aims to create reports to provide overviews of up-to-date
-groundwater conditions of Provincial Groundwater Observation Wells.
+This project aims to create groundwater level status reports of
+Provincial Groundwater Observation Well water level data.
 
 ### Project Status
 
