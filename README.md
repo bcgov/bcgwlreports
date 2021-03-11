@@ -13,7 +13,7 @@ This project is in early stages of development.
 ### Getting Help or Reporting an Issue
 
 To report bugs/issues/feature requests, please file an
-[issue](https://github.com/bcgov/streamflow-indicator/issues/).
+[issue](https://github.com/bcgov/groundwater-level-review-report/issues).
 
 ### How to Contribute
 
