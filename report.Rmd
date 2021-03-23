@@ -1,0 +1,210 @@
+---
+title: "Observation Wells Groundwater Levels"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    keep_tex: true
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
+  - \usepackage{pdflscape}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+params: 
+  w_full: ""
+  w_hist: ""
+  w_comp: ""
+  w_perc: ""
+  report_dates: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(knitr.kable.NA = '')
+w_full <- params$w_full
+w_hist <- params$w_hist
+w_comp <- params$w_comp
+w_perc <- params$w_perc
+report_dates <- params$report_dates
+ows <- unique(w_full$ow)
+```
+
+## Section 1 - Overview
+
+
+```{r table_1}
+w_full %>%
+  filter(Date %in% report_dates) %>%
+  select(ow, Date, Value) %>%
+  arrange(desc(Date)) %>%
+  pivot_wider(names_from = "Date", values_from = "Value") %>%
+  rename(`Obs. Well` = ow) %>%
+  kable(booktabs = TRUE, format = "latex", digits = 2, linesep = "",
+        caption = glue("Well numbers and dates included in this report.\\\\",
+                       "Values are depth below ground (m) for a given well/date.\\\\",
+                       "Blank cells indicate no data.")) %>%
+  kable_styling(latex_options = "hold_position")
+```
+
+\newpage
+
+### Wells Below Normal
+
+```{r table_2}
+totals <- w_perc %>%
+  select(-type) %>%
+  filter(str_detect(class, "low")) %>%
+  group_by(Date) %>%
+  summarize(t = unique(n_total_date), 
+            n = sum(n_class_type),
+            p = round(n / t * 100),
+            p = if_else(is.nan(p), 0, p), .groups = "drop") %>%
+  mutate(text = glue("{p}% ({n}/{t})"),
+         text = if_else(t == 0, glue(""), text)) %>%
+  select(Date, text) %>%
+  arrange(desc(Date)) %>%
+  pivot_wider(names_from = Date, values_from = text) %>%
+  mutate(type = "Across all types")
+
+t <- w_perc %>%
+  filter(str_detect(class, "low")) %>%
+  group_by(Date, type) %>%
+  summarize(t = unique(n_total_type), n = sum(n_class_type),
+            p = round(n / t * 100),
+            p = if_else(is.nan(p), 0, p), .groups = "drop") %>%
+  mutate(text = glue("{p}% ({n}/{t})"), 
+         text = if_else(t == 0, glue(""), text)) %>%
+  select(Date, type, text) %>%
+  arrange(desc(Date)) %>%
+  pivot_wider(names_from = Date, values_from = text) %>%
+  select(type, everything()) %>%
+  bind_rows(totals) 
+
+t %>%
+  rename(`Aquifer Type` = type) %>%
+  kable(format = "latex", booktabs = TRUE, linesep = "",
+        caption = glue("Proportion of wells Below Normal or Much Below Normal ",
+                       "by aquifer type and date.\\\\(X/Y) indicates X wells ",
+                       "with low values out of Y wells total for that ",
+                       "date/category.")) %>%
+  kable_styling(latex_options = "hold_position") %>%
+  row_spec(str_which(t$type, "Across all types"), hline_after = TRUE)
+```
+
+### Groundwater Level Status
+```{r table_3}
+t <- w_perc %>%
+  select(class, Date, n_total_class, n_total_date) %>%
+  distinct() %>%
+  arrange(desc(Date)) %>%
+  pivot_longer(cols = contains("total"), names_to = "total", values_to = "n") %>%
+  mutate(class = if_else(str_detect(total, "date"), "Across all classes", class),
+         class = factor(class, levels = c(perc_values$nice, "Across all classes"))) %>%
+  select(-total) %>%
+  distinct() %>%
+  pivot_wider(names_from = Date, values_from = n) %>%
+  arrange(class) %>%
+  left_join(select(perc_values, colour, nice), by = c("class" = "nice")) %>%
+  mutate(colour = replace_na(colour, "white")) %>%
+  select(colour, class, everything())
+
+t %>%
+  mutate(colour = "") %>%
+  kable(format = "latex", col.names = c(" ", "Percentile class", names(.)[-c(1:2)]), 
+        booktabs = TRUE, linesep = "",
+        caption = glue("Number of wells in each percentile class ",
+                       "by date.")) %>%
+  kable_styling(latex_options = "hold_position") %>%
+  column_spec(1, background = t$colour) %>%
+  row_spec(str_which(t$class, "Across") - 1, hline_after = TRUE)
+```
+
+\newpage
+
+\blandscape
+## Section 2 - Summary
+
+```{r table_4}
+t <- well_hist_compare(w_full, report_dates) %>%
+  well_meta() %>%
+  mutate(current_date = max(Date)) %>%
+  group_by(ow) %>%
+  mutate(value_last_year = Value[Date == current_date - years(1)]) %>%
+  filter(Date == current_date) %>%
+  mutate(class = map_chr(percentile, perc_match, cols = "nice")) %>%
+  mutate(Name = "", 
+         area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
+         district_name = str_remove(district_name, "Natural Resource District"), 
+         Value = round(Value, 2), value_last_year = round(value_last_year, 2),
+         class = replace_na(class, ""),
+         percentile = if_else(is.na(percentile), glue(""), glue("{round(percentile * 100)}\\%")),
+         median = round(median, 2)) %>%
+  select(Region = area_name, `Geographic\nArea` = district_name, Name, 
+         `Obs.\nWell` = ow, `Aquifer Type` = type, 
+         `Latest\nDate` = Date, `Latest\nValue` = Value, `Perc.` = percentile, 
+         `Percentile Class` = class, Approval = Approval,
+         `Last Year's\nValue` = value_last_year, Median = median) %>% 
+  ungroup()
+
+bg_colour <- set_names(perc_values$colour, perc_values$nice)[t$`Percentile Class`]
+bg_colour <- c("white", replace_na(bg_colour, "white"))
+
+t %>%
+  kable(format = "latex", booktabs = TRUE, escape = FALSE, linesep = "",
+        col.names = linebreak(names(t), align = "c"), align = "lllllcrrccrr",
+        caption = glue("Information on observation wells.\\\\", 
+                       "Includes comparison of latest water depth value ",
+                       "compared to last year's value. ",
+                       "Values/Medians are in meters below ground.")) %>%
+  kable_styling(latex_options = "hold_position") %>%
+  column_spec(str_which(names(t), "Aquifer Type"), width = "7em", latex_valign = "m") %>%
+  column_spec(str_which(names(t), "Percentile"), width = "5em", latex_valign = "m", background = bg_colour)
+```
+
+\elandscape
+
+
+\newpage
+
+## Section 3 -  Plots
+
+```{r s3_obs_well_plots, results = "asis", fig.asp = 1.25, fig.width = 10}
+date_range <- w_full %>%
+  filter(CurrentYear) %>%
+  select(WaterYear, water_year_start) %>%
+  distinct() %>%
+  glue_data("{WaterYear}-{water_year_start}-01") %>%
+  ymd()
+date_range <- c(date_range - years(20), date_range)
+
+for(ow in ows) {
+  cat(glue("### {ow}\n\n"))
+  full <- filter(w_full, ow == !!ow)
+  hist <- filter(w_hist, ow == !!ow)
+  
+  g1 <- well_plot_perc(full, hist)
+  g2 <- well_plot_hist(full, hist, wrap_year = TRUE, date_range)
+  
+  g <- g1 / g2 + plot_layout(guides = "collect", heights = c(1, 2))
+  print(g)
+  
+  cat("\n\n\\newpage\n\n")
+}
+```
+
+
+
+

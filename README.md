@@ -10,6 +10,13 @@ Provincial Groundwater Observation Well water level data.
 
 This project is in early stages of development.
 
+### Creating Reports
+
+-   Open `00_run.R`
+-   Add observation wells to the `ow` vector
+-   Choose report dates
+-   Run entire `00_run.R` script
+
 ### Getting Help or Reporting an Issue
 
 To report bugs/issues/feature requests, please file an
@@ -34,9 +41,11 @@ to abide by its terms.
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and limitations under the License.
+    Unless required by applicable law or agreed to in writing, software distributed
+    under the License is distributed on an &quot;AS IS&quot; BASIS, WITHOUT
+    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+    for the specific language governing permissions and limitations under the
+    License.
 
 ------------------------------------------------------------------------
 
