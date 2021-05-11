@@ -12,6 +12,11 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+# Load packages snapshot
+#renv::init()
+#renv::snapshot()
+#renv::restore()
+
 library(dplyr)
 library(tidyr)
 library(forcats)
