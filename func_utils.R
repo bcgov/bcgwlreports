@@ -22,3 +22,5 @@ ow_c <- function(ows) {
   glue("OW{str_pad(ows, '3', pad = 0)}") %>%
     as.character()
 }
+
+ow_link <- function(ow) glue("\\hyperref[{tolower(ow)}]{{{ow}}}")

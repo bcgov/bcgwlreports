@@ -41,12 +41,12 @@ if(!dir.exists("reports")) dir.create("reports")
 # high/low diff from high/low show because measurement is below ground so
 # lowest percentile is reversed, conceptually
 perc_values <- tribble(
-  ~class,      ~nice,               ~colour,  ~low, ~high, ~low_show, ~high_show,
-  "p_v_high",  "Much Above Normal", "blue",   0,    0.10,  0.9,  1,
-  "p_m_high",  "Above Normal",      "cyan",   0.10, 0.25,  0.75, 0.9,
-  "p_n",       "Normal",            "green",  0.25, 0.75,  0.25, 0.75,
-  "p_m_low",   "Below Normal",      "yellow", 0.75, 0.9,   0.10, 0.25,
-  "p_v_low",   "Much Below Normal", "red",    0.9,  1,     0,    0.10)
+  ~class,      ~nice,               ~colour,  ~txt_colour, ~low, ~high, ~low_show, ~high_show,
+  "p_v_high",  "Much Above Normal", "blue",   "white",  0,    0.10,  0.9,  1,
+  "p_m_high",  "Above Normal",      "cyan",   "black",  0.10, 0.25,  0.75, 0.9,
+  "p_n",       "Normal",            "green",  "black",  0.25, 0.75,  0.25, 0.75,
+  "p_m_low",   "Below Normal",      "yellow", "black",  0.75, 0.9,   0.10, 0.25,
+  "p_v_low",   "Much Below Normal", "red",    "black",  0.9,  1,     0,    0.10)
 
 plot_values <- tribble(~ type,     ~ size, ~ colour,
                        "Working",  0.5,      "red",
