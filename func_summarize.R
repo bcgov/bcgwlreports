@@ -18,6 +18,8 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
   # Remove cache files not from today
   if(clean_cache) cache_clean()
 
+  data_update()
+
   # Format obs wells just in case
   ows <- toupper(ows)
   ows <- str_trim(ows)
