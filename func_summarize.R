@@ -61,28 +61,12 @@ dates_check <- function(report_dates) {
   sort(c(report_dates, report_dates - years(1)), decreasing = TRUE)
 }
 
-well_dates <- function(w_full, report_dates, within) {
-
-  r <- tibble(report_dates = report_dates) %>%
-    mutate(Date = map(report_dates, ~seq(. - days(within),
-                                          . + days(within),
-                                          by = "1 day"))) %>%
-    unnest(Date)
-
-  w_full %>%
-    right_join(r, by = "Date") %>%
-    group_by(ow, report_dates) %>%
-    arrange(abs(Date - report_dates)) %>%
-    mutate(keep = if_else(all(is.na(Value)), Date[1], Date[first(which(!is.na(Value)))])) %>%
-    filter(Date == keep) %>%
-    ungroup() %>%
-    select(-keep)
-}
 
 well_prep <- function(ows, water_year_start, report_dates) {
   w <- well_dl(ows) %>%
-
-    mutate(data = map(data, well_clean, water_year_start = water_year_start, report_dates)) %>%
+    mutate(data = map(data, well_clean,
+                      water_year_start = water_year_start,
+                      report_dates = report_dates)) %>%
     unnest(data) %>%
     select(-file)
 
@@ -98,6 +82,16 @@ wy_calc <- function(report_dates, water_year_start) {
  wy
 }
 
+well_dl <- function(ows) {
+  tibble(ow = ows,
+         file_url = glue("http://www.env.gov.bc.ca/wsd/data_searches/",
+                     "obswell/map/data/{ow}-data.csv")) %>%
+    left_join(cache_load(ows), by = "ow") %>%
+    mutate(file = if_else(!is.na(file_local), as_glue(file_local), file_url)) %>%
+    select(-file_local, -file_url, -date) %>%
+    mutate(data = map2(file, ow, well_read))
+}
+
 well_read <- function(file, ow) {
   message(glue("   - {ow} ({if_else(str_detect(file, 'http'), 'online', 'local')})"))
   d <- read_csv(file, col_types = "Tncc", progress = FALSE)
@@ -107,8 +101,8 @@ well_read <- function(file, ow) {
 
 cache_load <- function(ows = NULL) {
   cache <- tibble(file_local = list.files("cache", full.names = TRUE),
-         ow = str_extract(basename(file_local), "OW[0-9]{3}"),
-         date = str_extract(basename(file_local), "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>%
+                  ow = str_extract(basename(file_local), "OW[0-9]{3}"),
+                  date = str_extract(basename(file_local), "[0-9]{4}-[0-9]{2}-[0-9]{2}")) %>%
     mutate(date = as_date(date))
   if(!is.null(ows)) cache <- filter(cache, ow %in% !!ows, date == Sys.Date())
   cache
@@ -119,16 +113,6 @@ cache_clean <- function() {
     filter(date != Sys.Date()) %>%
     pull(file_local) %>%
     unlink()
-}
-
-well_dl <- function(ows) {
-  tibble(ow = ows,
-         file_url = glue("http://www.env.gov.bc.ca/wsd/data_searches/",
-                     "obswell/map/data/{ow}-data.csv")) %>%
-    left_join(cache_load(ows), by = "ow") %>%
-    mutate(file = if_else(!is.na(file_local), as_glue(file_local), file_url)) %>%
-    select(-file_local, -file_url, -date) %>%
-    mutate(data = map2(file, ow, well_read))
 }
 
 well_clean <- function(w, water_year_start, report_dates) {
@@ -172,6 +156,23 @@ well_meta <- function(w) {
     left_join(data_load("aquifers"), by = c("aquifer_id", "ow"))
 }
 
+well_dates <- function(w_full, report_dates, within) {
+
+  r <- tibble(report_dates = report_dates) %>%
+    mutate(Date = map(report_dates, ~seq(. - days(within),
+                                         . + days(within),
+                                         by = "1 day"))) %>%
+    unnest(Date)
+
+  w_full %>%
+    right_join(r, by = "Date") %>%
+    group_by(ow, report_dates) %>%
+    arrange(abs(Date - report_dates)) %>%
+    mutate(keep = if_else(all(is.na(Value)), Date[1], Date[!is.na(Value)][1])) %>%
+    filter(Date == keep) %>%
+    ungroup() %>%
+    select(-keep)
+}
 
 well_hist <- function(w_full) {
   w_full %>%
