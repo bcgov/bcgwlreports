@@ -27,6 +27,7 @@ params:
   w_hist: ""
   w_comp: ""
   w_perc: ""
+  w_dates: ""
   report_dates: ""
 ---
 
@@ -37,6 +38,7 @@ w_full <- params$w_full
 w_hist <- params$w_hist
 w_comp <- params$w_comp
 w_perc <- params$w_perc
+w_dates <- params$w_dates
 report_dates <- params$report_dates
 ows <- unique(w_full$ow)
 ```
@@ -45,21 +47,26 @@ ows <- unique(w_full$ow)
 
 
 ```{r table_1}
-w_full %>%
-  filter(Date %in% report_dates) %>%
+w_dates %>%
   well_meta() %>%
   mutate(ow = ow_link(ow),
          area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
-         district_name = str_remove(district_name, "Natural Resource District")) %>%
-  select(district_name, area_name, ow, Date, Value) %>%
-  arrange(district_name, area_name, ow, desc(Date)) %>%
-  pivot_wider(names_from = "Date", values_from = "Value") %>%
-  rename(Region = district_name, `Geographic Area` = area_name, `Obs. Well` = ow) %>%
+         district_name = str_remove(district_name, " Natural Resource District"),
+         Value = as.character(round(Value, 2)),
+         Value = if_else(Date != report_dates & !is.na(Value), 
+                         as.character(glue("{Value}*")),
+                         Value)) %>%
+  arrange(area_name, district_name, ow, desc(Date)) %>%
+  select(area_name, district_name, ow, Value, report_dates) %>%
+  pivot_wider(names_from = "report_dates", values_from = "Value") %>%
+  rename(Region = area_name, `Geographic\nArea` = district_name, `Obs.\nWell` = ow) %>%
   kable(booktabs = TRUE, longtable = TRUE, format = "latex", digits = 2, linesep = "",
         escape = FALSE,
-        caption = glue("\\textbf{{Well numbers and dates included in this report}}\\\\",
-                       "Values are depth below ground (m) for a given well/date. ",
-                       "Blank cells indicate no data.")) %>%
+        caption = glue("\\textbf{{Well numbers and reporting dates}}\\\\",
+                       "Values are depth below ground (m) for a given well/date.\\\\",
+                       "Blank cells indicate no data.\\\\",
+                       "** indicates a value not on the exact reporting date but within a {within*2}-day window around ",
+                       "the reporting date.")) %>%
   kable_styling(latex_options = c("hold_position", "repeat_header"))
 ```
 
@@ -68,41 +75,54 @@ w_full %>%
 ### Wells Below Normal
 
 ```{r table_2}
+window <- w_perc %>%
+  filter(window) %>%
+  pull(report_dates) %>%
+  unique()
+
 totals <- w_perc %>%
   select(-type) %>%
   filter(str_detect(class, "low")) %>%
-  group_by(Date) %>%
+  group_by(report_dates) %>%
   summarize(t = unique(n_total_date), 
             n = sum(n_class_type),
             p = round(n / t * 100),
             p = if_else(is.nan(p), 0, p), .groups = "drop") %>%
   mutate(text = glue("{p}% ({n}/{t})"),
          text = if_else(t == 0, glue(""), text)) %>%
-  select(Date, text) %>%
-  arrange(desc(Date)) %>%
-  pivot_wider(names_from = Date, values_from = text) %>%
+  select(report_dates, text) %>%
+  arrange(desc(report_dates)) %>%
   mutate(type = "Across all types")
 
 t <- w_perc %>%
   filter(str_detect(class, "low")) %>%
-  group_by(Date, type) %>%
+  group_by(report_dates, type) %>%
   summarize(t = unique(n_total_type), n = sum(n_class_type),
             p = round(n / t * 100),
-            p = if_else(is.nan(p), 0, p), .groups = "drop") %>%
+            p = if_else(is.nan(p), 0, p),
+            .groups = "drop") %>%
   mutate(text = glue("{p}% ({n}/{t})"), 
          text = if_else(t == 0, glue(""), text)) %>%
-  select(Date, type, text) %>%
-  arrange(desc(Date)) %>%
-  pivot_wider(names_from = Date, values_from = text) %>%
-  select(type, everything()) %>%
-  bind_rows(totals) 
+  select(report_dates, type, text) %>%
+  arrange(desc(report_dates)) %>%
+  bind_rows(totals) %>%
+  mutate(report_dates = if_else(report_dates %in% window, 
+                                as.character(glue("{report_dates}*")), 
+                                as.character(report_dates))) %>%
+  pivot_wider(names_from = report_dates, values_from = text) %>%
+  select(type, everything())
+
+names(t)[names(t) %in% unique(w_perc$report_dates[w_perc$window])]
 
 t %>%
   rename(`Aquifer Type` = type) %>%
   kable(format = "latex", booktabs = TRUE, linesep = "",
         caption = glue("\\textbf{{Proportion of wells Below Normal or Much Below Normal}}\\\\",
                        "(X/Y) indicates X wells with low values out of Y wells total for that ",
-                       "date/category.")) %>%
+                       "date/category.\\\\",
+                       "Blank cells indicate no wells with data\\\\",
+                       "** indicates reporting dates which include values within ",
+                       "a {within*2}-day window around it")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(str_which(t$type, "Across all types"), hline_after = TRUE)
 ```
@@ -110,15 +130,18 @@ t %>%
 ### Groundwater Level Status
 ```{r table_3}
 t <- w_perc %>%
-  select(class, Date, n_total_class, n_total_date) %>%
+  select(class, report_dates, n_total_class, n_total_date) %>%
   distinct() %>%
-  arrange(desc(Date)) %>%
+  arrange(desc(report_dates)) %>%
   pivot_longer(cols = contains("total"), names_to = "total", values_to = "n") %>%
   mutate(class = if_else(str_detect(total, "date"), "Across all classes", class),
          class = factor(class, levels = c(perc_values$nice, "Across all classes"))) %>%
   select(-total) %>%
   distinct() %>%
-  pivot_wider(names_from = Date, values_from = n) %>%
+  mutate(report_dates = if_else(report_dates %in% window, 
+                                as.character(glue("{report_dates}*")), 
+                                as.character(report_dates))) %>%
+  pivot_wider(names_from = report_dates, values_from = n) %>%
   arrange(class) %>%
   left_join(select(perc_values, colour, nice), by = c("class" = "nice")) %>%
   mutate(colour = replace_na(colour, "white")) %>%
@@ -129,7 +152,9 @@ t %>%
   kable(format = "latex", col.names = c(" ", "Percentile class", names(.)[-c(1:2)]), 
         booktabs = TRUE, linesep = "",
         caption = glue("\\textbf{{Number of wells in each percentile class ",
-                       "by date}}")) %>%
+                       "by date}}\\\\",
+                       "** indicates reporting dates which include values within ",
+                       "a {within*2}-day window around it")) %>%
   kable_styling(latex_options = "hold_position") %>%
   column_spec(1, background = t$colour) %>%
   row_spec(str_which(t$class, "Across") - 1, hline_after = TRUE)
@@ -143,19 +168,28 @@ t %>%
 \captionsetup{width=0.9\paperwidth}
 
 ```{r table_4}
-t <- well_hist_compare(w_full, report_dates) %>%
+t <- well_hist_compare(w_dates, w_full)
+
+last_year <- t %>%
+  filter(!CurrentYear) %>%
+  select(ow, value_last_year = Value, report_dates) %>%
+  mutate(report_dates = report_dates + years(1))
+  
+t <- t %>%
   well_meta() %>%
-  mutate(current_date = max(Date),
-         ow = ow_link(ow)) %>%
+  arrange(ow, desc(Date)) %>%
   group_by(ow) %>%
-  mutate(value_last_year = Value[Date == current_date - years(1)]) %>%
-  filter(Date == current_date) %>%
-  mutate(class = map_chr(percentile, perc_match, cols = "nice"),
+  filter(CurrentYear) %>%
+  mutate(keep = if_else(all(is.na(Value)), Date[1], Date[!is.na(Value)][1])) %>%
+  filter(Date == keep) %>%
+  left_join(last_year, by = c("ow", "report_dates")) %>%
+  mutate(ow = ow_link(ow),
+         class = map_chr(percentile, perc_match, cols = "nice"),
          Name = "", 
          area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
          district_name = str_remove(district_name, "Natural Resource District"), 
-         Value = round(Value, 2), 
-         Value = if_else(Approval == "Working", glue("{Value}*"), glue(Value)),
+         Value = as.character(round(Value, 2)), 
+         Value = if_else(Approval == "Working" & !is.na(Value), as.character(glue("{Value}*")), Value),
          value_last_year = round(value_last_year, 2),
          class = replace_na(class, ""),
          percentile = if_else(is.na(percentile), glue(""), glue(" ({round(percentile * 100)}\\%)")),
@@ -179,11 +213,12 @@ t <- t %>%
 t %>%
   kable(format = "latex", booktabs = TRUE, longtable = TRUE, escape = FALSE, linesep = "",
         col.names = linebreak(names(t), align = "c"), align = "lllllcrcrr",
-        caption = glue("\\textbf{{Information on observation wells}}\\\\", 
+        caption = glue("\\textbf{{Information on observation wells in ",
+                       "{year(t$`Latest\nDate`[1])}}}\\\\", 
                        "Includes comparison of latest water depth value ",
                        "compared to last year's value. ",
                        "Values/Medians are in meters below ground.\\\\",
-                       "* Indicates 'Working' data (not 'Approved')")) %>%
+                       "** Indicates an Approval Status of 'Working'")) %>%
   kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
   column_spec(str_which(names(t), "Aquifer Type"), width = "7em", latex_valign = "m") %>%
   column_spec(str_which(names(t), "Percentile Class"), width = "8em", latex_valign = "m", 
