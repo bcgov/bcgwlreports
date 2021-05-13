@@ -18,10 +18,11 @@ data_update <- function(cache_age = 7, type = NULL) {
   d <- data_retrieve(cache_age)
   if(!is.null(type)) d <- filter(type %in% !!type)
 
+  message("Checking/Updating data...")
   for(i in seq_len(nrow(d))) {
     if(d$update[i]) {
       get(glue("data_{d$type[i]}"))()
-    } else message(glue("Skipping {d$type[i]} data"))
+    } else message(glue("- Skipping {d$type[i]} data"))
   }
 }
 
