@@ -47,11 +47,13 @@ if(!dir.exists("reports")) dir.create("reports")
 # lowest percentile is reversed, conceptually
 perc_values <- tribble(
   ~class,      ~nice,               ~colour,  ~txt_colour, ~low, ~high, ~low_show, ~high_show,
-  "p_v_high",  "Much Above Normal", "blue",   "white",  0,    0.10,  0.9,  1,
+  "p_max",     "Maximum",           "black",  "white",  0,    0.00001,     1,    1,
+  "p_v_high",  "Much Above Normal", "blue",   "white",  0.00001,    0.10,  0.9,  1,
   "p_m_high",  "Above Normal",      "cyan",   "black",  0.10, 0.25,  0.75, 0.9,
   "p_n",       "Normal",            "green",  "black",  0.25, 0.75,  0.25, 0.75,
   "p_m_low",   "Below Normal",      "yellow", "black",  0.75, 0.9,   0.10, 0.25,
-  "p_v_low",   "Much Below Normal", "red",    "black",  0.9,  1,     0,    0.10)
+  "p_v_low",   "Much Below Normal", "red",    "black",  0.9,  0.99999,     0,    0.10,
+  "p_min",     "Minimum",           "orange", "black",  0.99999,    1,     0,    0)
 
 plot_values <- tribble(~ type,     ~ size, ~ colour,
                        "Working",  0.5,      "red",
