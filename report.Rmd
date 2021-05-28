@@ -114,8 +114,6 @@ t <- w_perc %>%
   pivot_wider(names_from = report_dates, values_from = text) %>%
   select(type, everything())
 
-names(t)[names(t) %in% unique(w_perc$report_dates[w_perc$window])]
-
 t %>%
   rename(`Aquifer Type` = type) %>%
   kable(format = "latex", booktabs = TRUE, linesep = "",
@@ -158,8 +156,8 @@ t %>%
                        "** indicates reporting dates which include values within ",
                        "a {within*2}-day window around it")) %>%
   kable_styling(latex_options = "hold_position") %>%
-  column_spec(1, background = t$colour) %>%
-  row_spec(str_which(t$class, "Across") - 1, hline_after = TRUE)
+  column_spec(1, background = c("white", t$colour)) %>%
+  row_spec(str_which(t$class, "Across"), hline_after = TRUE)
 ```
 
 \newpage
