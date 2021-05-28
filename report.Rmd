@@ -192,7 +192,7 @@ t <- t %>%
          Value = if_else(Approval == "Working" & !is.na(Value), as.character(glue("{Value}*")), Value),
          value_last_year = round(value_last_year, 2),
          class = replace_na(class, ""),
-         percentile = if_else(is.na(percentile), glue(""), glue(" ({round(percentile * 100)}\\%)")),
+         percentile = if_else(is.na(percentile), glue(""), glue(" ({round((1 - percentile) * 100)}\\%)")),
          percentile = glue("{class}{percentile}"),
          median = round(median, 2)) %>%
   ungroup() %>%
