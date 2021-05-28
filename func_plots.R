@@ -28,9 +28,9 @@ well_plots_base <- function(title = "", legend = "right") {
     labs(x = "Day of Year", y = "DBG (m)", subtitle = title)
 }
 
-well_plot_perc <- function(full, hist, legend = "right") {
+well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
 
-  recent <- filter(full, CurrentYear, WaterYear == max(WaterYear))
+  recent <- filter(full, WaterYear == max(WaterYear))
   if(nrow(recent) > 0) {
     origin <- recent$Date[recent$DayofYear == 1] - days(1)
     hist <- mutate(hist,
@@ -41,17 +41,29 @@ well_plot_perc <- function(full, hist, legend = "right") {
 
     data <- select(recent, Date, Approval, Value) %>%
       bind_rows(select(hist, Date, Approval, Value = median)) %>%
-      mutate(Approval = factor(Approval, levels = c("Median", "Approved", "Working")))
+      mutate(Approval = factor(Approval,
+                               levels = c("Median", "Approved", "Working")))
 
-    title <- glue("Current Water Year {glue_collapse(unique(recent$CalendarYear), ' - ')}")
+    title <- glue("Water Year {glue_collapse(unique(recent$CalendarYear), ' - ')}")
     range_name <- glue("Historical range of min & max ({hist$start_year[1]} - ",
                        "{hist$end_year[1]})")
 
-    well_plots_base(title = title, legend = legend) +
+    p <- well_plots_base(title = title, legend = legend) +
       geom_ribbon(data = hist, alpha = 0.35,
                   aes(x = Date, ymin = q_low, ymax = q_high, fill = nice)) +
       geom_line(data = data, aes(x = Date, y = Value, colour = Approval,
                                  size = Approval), na.rm = TRUE)
+
+    if(!is.null(latest_date) && latest_date$Date %in% data$Date) {
+      p <-  p +
+        geom_point(data = latest_date, size = 4,
+                   aes(x = Date, y = Value, shape = "Latest Date")) +
+        guides(shape = guide_legend(override.aes = list(colour = "black",
+                                                        fill = "black",
+                                                        shape = 21)))
+    }
+  p
+
   } else {
     well_plots_base() +
       theme(axis.text = element_blank(), axis.ticks = element_blank()) +
@@ -59,7 +71,7 @@ well_plot_perc <- function(full, hist, legend = "right") {
   }
 }
 
-well_plot_hist <- function(full, hist, date_range,
+well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
                            legend = "right", wrap_year = FALSE) {
 
   data <- full %>%
@@ -82,11 +94,25 @@ well_plot_hist <- function(full, hist, date_range,
                                         glue("Water Year {yr_bin[1]} - {yr_bin[2]}"),
                                         glue("Water Year {yr_bin[2]+1} - {yr_bin[3]}")))
 
-  well_plots_base(title = "Historical Record", legend = legend) +
+  p <- well_plots_base(title = "Historical Record", legend = legend) +
     geom_line(data = data,
               aes(x = Date, y = Value, colour = Approval, size = Approval),
               na.rm = TRUE) +
     facet_wrap(~ yr_bin, ncol = 1, scales = "free_x")
+
+  if(!is.null(latest_date) &&
+     latest_date$Date %in% data$Date
+     && latest_date$CurrentYear) {
+    latest_date$yr_bin <- data$yr_bin[nrow(data)]
+    p <- p +
+      geom_point(data = latest_date, size = 4,
+                 aes(x = Date, y = Value, shape = "Latest Date")) +
+      guides(shape = guide_legend(override.aes = list(colour = "black",
+                                                      fill = "black",
+                                                      shape = 21)))
+  }
+
+  p
 }
 
 
