@@ -30,7 +30,13 @@ well_plots_base <- function(title = "", legend = "right") {
 
 well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
 
-  recent <- filter(full, WaterYear == max(WaterYear))
+  year <- full %>%
+    filter(!is.na(Value)) %>%
+    summarize(yr = max(WaterYear)) %>%
+    pull(yr)
+
+  recent <- filter(full, WaterYear == year)
+
   if(nrow(recent) > 0) {
     origin <- recent$Date[recent$DayofYear == 1] - days(1)
     hist <- mutate(hist,
@@ -54,7 +60,9 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
       geom_line(data = data, aes(x = Date, y = Value, colour = Approval,
                                  size = Approval), na.rm = TRUE)
 
-    if(!is.null(latest_date) && latest_date$Date %in% data$Date) {
+    if(!is.null(latest_date) &&
+       nrow(latest_date) > 0 &&
+       latest_date$Date %in% data$Date) {
       p <-  p +
         geom_point(data = latest_date, size = 4,
                    aes(x = Date, y = Value, shape = "Latest Date")) +
@@ -101,6 +109,7 @@ well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
     facet_wrap(~ yr_bin, ncol = 1, scales = "free_x")
 
   if(!is.null(latest_date) &&
+     nrow(latest_date) > 0 &&
      latest_date$Date %in% data$Date
      && latest_date$CurrentYear) {
     latest_date$yr_bin <- data$yr_bin[nrow(data)]

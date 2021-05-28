@@ -243,7 +243,8 @@ date_range <- c(date_range - years(20), date_range)
 
 latest_date <- w_dates %>% 
   group_by(ow) %>% 
-  filter(Date == max(Date[!is.na(Value)]))
+  filter(!is.na(Value)) %>%
+  filter(Date == max(Date))
 
 for(ow in ows) {
   cat(glue("### {ow}\n\n"))
