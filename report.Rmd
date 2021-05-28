@@ -29,6 +29,7 @@ params:
   w_perc: ""
   w_dates: ""
   report_dates: ""
+  within: ""
 ---
 
 ```{r setup, include=FALSE}
@@ -39,6 +40,7 @@ w_hist <- params$w_hist
 w_comp <- params$w_comp
 w_perc <- params$w_perc
 w_dates <- params$w_dates
+within <- params$within
 report_dates <- params$report_dates
 ows <- unique(w_full$ow)
 ```

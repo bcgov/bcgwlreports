@@ -44,8 +44,8 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
   render("report.Rmd",
          params = list("w_full" = w_full, "w_hist" = w_hist,
                        "w_comp" = w_hist, "w_perc" = w_perc,
-                       "w_dates" = w_dates,
-                       "report_dates" = report_dates),
+                       "w_dates" = w_dates, "report_dates" = report_dates,
+                       "within" = within),
          output_dir = "reports", output_file = glue("report_{Sys.Date()}.pdf"))
 }
 
