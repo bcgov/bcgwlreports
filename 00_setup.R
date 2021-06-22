@@ -17,6 +17,11 @@
 #renv::snapshot()
 #renv::restore()
 
+
+library(fasstr)
+library(bcmaps)
+library(bcdata)
+
 library(dplyr)
 library(tidyr)
 library(forcats)
@@ -25,14 +30,12 @@ library(glue)
 library(readr)
 library(purrr)
 library(lubridate)
-library(fasstr)
+library(httr)
+
 library(ggplot2)
 library(patchwork)
 library(rmarkdown)
 library(kableExtra)
-library(httr)
-library(bcmaps)
-library(bcdata)
 
 source("func_summarize.R")
 source("func_plots.R")

@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+renv::restore() # Install and synchronize package versions
+
 source("00_setup.R")
 
 ows <- c("OW008", "OW217", "OW377", "OW197", "OW312", "OW373", "OW430", "OW074",
@@ -19,7 +21,7 @@ ows <- c("OW008", "OW217", "OW377", "OW197", "OW312", "OW373", "OW430", "OW074",
          "OW299", "OW301",
          "OW337", "OW390", "OW432", "OW262", "OW413", "OW442")
 
-#ows <- c("OW008", "OW217", "OW377", "OW197")
+ows <- c("OW008", "OW217", "OW377", "OW197")
 
 # Check problems
 # 201, 008, 301,
@@ -31,7 +33,7 @@ report_dates <- c(Sys.Date(), Sys.Date() - weeks(2))
 report_dates # e.g., "2021-03-23" "2021-03-09"
 
 # Run report including all the above wells
-well_report(ows = ows, report_dates = report_dates, within = 7)
+well_report(ows = ows, report_dates = report_dates)
 
 # The script finds the dates within 7 days (within) with the most data (i.e the
 # most obs wells with data) and uses those.
