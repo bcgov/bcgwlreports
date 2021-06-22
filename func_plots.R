@@ -13,8 +13,8 @@
 # the License.
 
 
-well_plots_base <- function(title = "", legend = "right") {
-  ggplot() +
+well_plots_base <- function(title = "", legend = "right", caption = NA) {
+  g <- ggplot() +
     theme_bw() +
     theme(legend.title = element_blank(), legend.position = legend,
           legend.margin = margin(),
@@ -26,6 +26,9 @@ well_plots_base <- function(title = "", legend = "right") {
     scale_colour_manual(values = setNames(plot_values$colour, plot_values$type)) +
     scale_fill_manual(values = setNames(perc_values$colour, perc_values$nice)) +
     labs(x = "Day of Year", y = "DBG (m)", subtitle = title)
+
+  if(!is.na(caption)) g <- g + labs(caption = caption)
+  g
 }
 
 well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
@@ -54,9 +57,18 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
     range_name <- glue("Historical range of min & max ({hist$start_year[1]} - ",
                        "{hist$end_year[1]})")
 
-    p <- well_plots_base(title = title, legend = legend) +
-      geom_ribbon(data = hist, alpha = 0.35,
-                  aes(x = Date, ymin = q_low, ymax = q_high, fill = nice)) +
+    caption <- if_else(nrow(hist) > 0,
+                       "Not enough non-missing data to calculate percentiles",
+                       NA_character_)
+
+    p <- well_plots_base(title = title, legend = legend, caption = caption)
+
+    if(nrow(hist) > 0) {
+      p <- p +
+        geom_ribbon(data = hist, alpha = 0.35,
+                    aes(x = Date, ymin = q_low, ymax = q_high, fill = nice))
+    }
+    p <- p +
       geom_line(data = data, aes(x = Date, y = Value, colour = Approval,
                                  size = Approval), na.rm = TRUE)
 
@@ -98,9 +110,10 @@ well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
   yr_bin <- unique(data$WaterYear)
   yr_bin <- yr_bin[c(1, length(yr_bin)/2, length(yr_bin))]
 
-  data <- mutate(data, yr_bin = if_else(WaterYear <= yr_bin[2],
-                                        glue("Water Year {yr_bin[1]} - {yr_bin[2]}"),
-                                        glue("Water Year {yr_bin[2]+1} - {yr_bin[3]}")))
+  data <- mutate(data, yr_bin =
+                   if_else(WaterYear <= yr_bin[2],
+                           glue("Water Year {yr_bin[1]} - {yr_bin[2]}"),
+                           glue("Water Year {yr_bin[2]+1} - {yr_bin[3]}")))
 
   p <- well_plots_base(title = "Historical Record", legend = legend) +
     geom_line(data = data,
