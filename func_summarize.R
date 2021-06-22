@@ -12,8 +12,26 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+
+#' Compile report
+#'
+#' @param ows Character vector. Observation well numbers
+#' @param report_dates Character vector. Two current dates to explore
+#' @param within Numeric. Number of days within which to get alternative dates
+#' @param years_min Numeric. Minimum number of years required to to calculate a
+#'   percentiles
+#' @param years_max Numeric. Maximum number of years used to to calculate a
+#'   percentiles (starting with previous year).
+#' @param n_missing Numeric. Number of days with less than `min_missing`
+#'   observations to permit
+#' @param clean_cache Logical. Remove all cached data before proceeding.
+#'
+#' @return
+#' @export
+#'
+#' @examples
 well_report <- function(ows, report_dates = Sys.Date(), within = 7,
-                        clean_cache = TRUE) {
+                        years_min = 5, years_max = 10, clean_cache = TRUE) {
 
   report_dates <- dates_check(report_dates)
 
@@ -33,10 +51,15 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
 
   message(glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
   w_full <- well_prep(ows, water_year_start = 10, report_dates)
-  w_dates <- well_dates(w_full, report_dates, within)
   message("- Summarizing historical statistics")
-  w_hist <- well_hist(w_full)
-  w_comp <- well_hist_compare(w_dates, w_full)
+  w_hist <- well_hist(w_full, years_min, years_max)
+
+  message("- Calculating best report dates")
+  w_dates <- well_dates(w_full, w_hist, report_dates, within)
+
+  message("- Comparing current to historical data")
+  w_comp <- well_hist_compare(w_dates, w_hist)
+
   message("- Summarizing percentiles")
   w_perc <- well_percentiles(w_comp)
 
@@ -45,7 +68,8 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
          params = list("w_full" = w_full, "w_hist" = w_hist,
                        "w_comp" = w_hist, "w_perc" = w_perc,
                        "w_dates" = w_dates, "report_dates" = report_dates,
-                       "within" = within),
+                       "within" = within,
+                       "years_min" = years_min, "years_max" = years_max),
          output_dir = "reports", output_file = glue("report_{Sys.Date()}.pdf"))
 }
 
@@ -156,27 +180,12 @@ well_meta <- function(w) {
     left_join(data_load("aquifers"), by = c("aquifer_id", "ow"))
 }
 
-well_dates <- function(w_full, report_dates, within) {
-
-  r <- tibble(report_dates = report_dates) %>%
-    mutate(Date = map(report_dates, ~seq(. - days(within),
-                                         . + days(within),
-                                         by = "1 day"))) %>%
-    unnest(Date)
+well_hist <- function(w_full, years_min, years_max) {
+  current_year <- unique(w_full$WaterYear[w_full$CurrentYear])
 
   w_full %>%
-    right_join(r, by = "Date") %>%
-    group_by(ow, report_dates) %>%
-    arrange(abs(Date - report_dates)) %>%
-    mutate(keep = if_else(all(is.na(Value)), Date[1], Date[!is.na(Value)][1])) %>%
-    filter(Date == keep) %>%
-    ungroup() %>%
-    select(-keep)
-}
-
-well_hist <- function(w_full) {
-  w_full %>%
-    filter(Approval == "Approved", !is.na(Value), !CurrentYear) %>%
+    filter(WaterYear >= !!current_year - !!years_max, !CurrentYear,
+           Approval == "Approved", !is.na(Value)) %>%
     group_by(ow, DayofYear) %>%
     summarize(min = min(Value, na.rm = TRUE),
               max = max(Value, na.rm = TRUE),
@@ -186,14 +195,41 @@ well_hist <- function(w_full) {
               start_year = min(WaterYear),
               end_year = max(WaterYear),
               v = list(Value),
-              p = list(ecdf(Value)), .groups = "drop")
+              p = list(ecdf(Value)), .groups = "drop") %>%
+    mutate(quality_hist = case_when(n_years == years_max ~ "good",
+                                    n_years >= years_min ~ "fair",
+                                    TRUE ~ "poor"),
+           quality_hist = factor(quality_hist, levels = c("poor", "fair", "good")),
+           v = if_else(quality_hist == "poor", list(NA), v),
+           p = if_else(quality_hist == "poor", list(NA), p))
 }
 
-well_hist_compare <- function(w_dates, w_full) {
-  w_dates %>%
-    left_join(well_hist(w_full), by = c("ow", "DayofYear")) %>%
-    mutate(percentile = map2_dbl(p, Value, ~.x(.y)))
+well_dates <- function(w_full, w_hist, report_dates, within) {
+
+  r <- tibble(report_dates = report_dates) %>%
+    mutate(Date = map(report_dates, ~seq(. - days(within),
+                                         . + days(within),
+                                         by = "1 day"))) %>%
+    unnest(Date)
+
+  w_full %>%
+    right_join(r, by = "Date") %>%
+    left_join(select(w_hist, ow, DayofYear, quality_hist, n_years),
+              by = c("ow", "DayofYear")) %>%
+    group_by(ow, report_dates) %>%
+    arrange(desc(quality_hist), abs(Date - report_dates), .by_group = TRUE) %>%
+    mutate(keep = if_else(all(is.na(Value)), Date[1], Date[!is.na(Value)][1])) %>%
+    filter(Date == keep) %>%
+    ungroup() %>%
+    select(-keep)
 }
+
+well_hist_compare <- function(w_dates, w_hist) {
+  w_dates %>%
+    left_join(w_hist, by = c("ow", "DayofYear", "n_years", "quality_hist")) %>%
+    mutate(percentile = map2_dbl(p, Value, ~{if(!is.null(.x)) .x(.y) else NA_real_}))
+}
+
 
 perc_match <- function(x, cols = "class") {
   perc_values[[cols]][x >= perc_values$low][sum(x >= perc_values$low)]
