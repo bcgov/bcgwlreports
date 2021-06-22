@@ -138,10 +138,120 @@ well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
 }
 
 
-well_table_below_norm <- function(w, by) {
+well_table_overview <- function(w_dates) {
+  w_dates %>%
+    well_meta() %>%
+    mutate(ow = ow_link(ow),
+           area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
+           district_name = str_remove(district_name, " Natural Resource District"),
+           Value = as.character(round(Value, 2)),
+           Value = if_else(Date != report_dates & !is.na(Value),
+                           as.character(glue("{Value}*")),
+                           Value)) %>%
+    arrange(area_name, district_name, ow, desc(Date)) %>%
+    select(area_name, district_name, ow, Value, report_dates) %>%
+    pivot_wider(names_from = "report_dates", values_from = "Value") %>%
+    rename(Region = area_name, `Geographic\nArea` = district_name, `Obs.\nWell` = ow)
+}
 
+well_table_below_norm <- function(w_perc, window) {
 
+  totals <- w_perc %>%
+    select(-type) %>%
+    filter(str_detect(class, "low")) %>%
+    group_by(report_dates) %>%
+    summarize(t = unique(n_total_date),
+              n = sum(n_class_type),
+              p = round(n / t * 100),
+              p = if_else(is.nan(p), 0, p), .groups = "drop") %>%
+    mutate(text = glue("{p}% ({n}/{t})"),
+           text = if_else(t == 0, glue(""), text)) %>%
+    select(report_dates, text) %>%
+    arrange(desc(report_dates)) %>%
+    mutate(type = "Across all types")
 
+  w_perc %>%
+    filter(str_detect(class, "low")) %>%
+    group_by(report_dates, type) %>%
+    summarize(t = unique(n_total_type), n = sum(n_class_type),
+              p = round(n / t * 100),
+              p = if_else(is.nan(p), 0, p),
+              .groups = "drop") %>%
+    mutate(text = glue("{p}% ({n}/{t})"),
+           text = if_else(t == 0, glue(""), text)) %>%
+    select(report_dates, type, text) %>%
+    arrange(desc(report_dates)) %>%
+    bind_rows(totals) %>%
+    mutate(report_dates = if_else(report_dates %in% !!window,
+                                  as.character(glue("{report_dates}*")),
+                                  as.character(report_dates))) %>%
+    pivot_wider(names_from = report_dates, values_from = text) %>%
+    select(type, everything()) %>%
+    rename(`Aquifer Type` = type)
+}
 
+well_table_status <- function(w_perc, perc_values, window) {
+  w_perc %>%
+    select(class, report_dates, n_total_class, n_total_date) %>%
+    distinct() %>%
+    arrange(desc(report_dates)) %>%
+    pivot_longer(cols = contains("total"), names_to = "total", values_to = "n") %>%
+    mutate(class = if_else(str_detect(total, "date"), "Across all classes", class),
+           class = factor(class, levels = c(perc_values$nice, "Across all classes"))) %>%
+    select(-total) %>%
+    distinct() %>%
+    mutate(report_dates = if_else(report_dates %in% !!window,
+                                  as.character(glue("{report_dates}*")),
+                                  as.character(report_dates))) %>%
+    pivot_wider(names_from = report_dates, values_from = n) %>%
+    arrange(class) %>%
+    left_join(select(perc_values, colour, nice), by = c("class" = "nice")) %>%
+    mutate(colour = replace_na(colour, "white")) %>%
+    select(colour, class, everything())
+}
 
+well_table_summary <- function(w_dates, w_hist, perc_values) {
+
+  t <- well_hist_compare(w_dates, w_hist)
+
+  last_year <- t %>%
+    filter(!CurrentYear) %>%
+    select(ow, value_last_year = Value, report_dates) %>%
+    mutate(report_dates = report_dates + years(1))
+
+  t %>%
+    well_meta() %>%
+    arrange(ow, desc(Date)) %>%
+    group_by(ow) %>%
+    filter(CurrentYear) %>%
+    mutate(keep = if_else(all(is.na(Value)), Date[1], Date[!is.na(Value)][1])) %>%
+    filter(Date == keep) %>%
+    left_join(last_year, by = c("ow", "report_dates")) %>%
+    mutate(ow = ow_link(ow),
+           class = map_chr(percentile, perc_match, cols = "nice"),
+           Name = "",
+           area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
+           district_name = str_remove(district_name, "Natural Resource District"),
+           Value = as.character(round(Value, 2)),
+           Value = if_else(Approval == "Working" & !is.na(Value), as.character(glue("{Value}*")), Value),
+           value_last_year = round(value_last_year, 2),
+           class = replace_na(class, ""),
+           percentile = if_else(is.na(percentile), glue(""), glue(" ({round((1 - percentile) * 100)}\\%)")),
+           percentile = glue("{class}{percentile}"),
+           n_years = case_when(percentile == "" ~ glue(""),
+                               quality_hist == "fair" ~ glue("{n_years}**"),
+                               TRUE ~ glue(n_years)),
+           median = round(median, 2)) %>%
+    ungroup() %>%
+    arrange(area_name, district_name, ow) %>%
+    mutate(bg_colour = set_names(perc_values$colour, perc_values$nice)[class],
+           bg_colour = replace_na(bg_colour, "white"),
+           txt_colour = set_names(perc_values$txt_colour, perc_values$nice)[class],
+           txt_colour = replace_na(txt_colour, "black")) %>%
+    select(bg_colour, txt_colour,
+           Region = area_name, `Geographic\nArea` = district_name, Name,
+           `Obs.\nWell` = ow, `Aquifer Type` = type,
+           `Latest\nDate` = Date, `Latest\nValue` = Value,
+           `Percentile Class` = percentile, `Perc.\nYears` = n_years,
+           `Last Year's\nValue` = value_last_year, Median = median)
 }
