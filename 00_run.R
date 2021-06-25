@@ -21,12 +21,14 @@ ows <- c("OW008", "OW217", "OW377", "OW197", "OW312", "OW373", "OW430", "OW074",
          "OW299", "OW301",
          "OW337", "OW390", "OW432", "OW262", "OW413", "OW442")
 
-ows <- c("OW008", "OW217", "OW377", "OW197")
+#ows <- c("OW008", "OW217", "OW377", "OW197")
 
 # Check problems
 # 201, 008, 301,
 
 # Remove duplicates obs wells
+
+#ows <- "OW201"
 
 # Default dates are today (Sys.Date()), and two weeks ago (Sys.Date() - weeks(2)).
 report_dates <- c(Sys.Date(), Sys.Date() - weeks(2))

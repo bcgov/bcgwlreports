@@ -22,8 +22,6 @@
 #'   percentiles
 #' @param years_max Numeric. Maximum number of years used to to calculate a
 #'   percentiles (starting with previous year).
-#' @param n_missing Numeric. Number of days with less than `min_missing`
-#'   observations to permit
 #' @param clean_cache Logical. Remove all cached data before proceeding.
 #'
 #' @return
