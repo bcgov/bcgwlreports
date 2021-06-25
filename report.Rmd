@@ -125,10 +125,12 @@ t %>%
                        "{year(t$`Latest\nDate`[1])}}}\\\\", 
                        "Includes comparison of latest water depth value ",
                        "compared to last year's value. ",
-                       "Values/Medians are in meters below ground.\\\\",
+                       "Values/Medians are in meters below ground. ",
+                       "Perc. Years are the number of years included in the ",
+                       "percentile calculation.\\\\",
                        "** Indicates Values with an Approval Status of 'Working'\\\\", # Require extra *
-                       "*** Indicates a daily percentile calculated from less than ",
-                       "{years_max} but more than {years_min} years worth of data")) %>%
+                       "*** Indicates a daily percentile calculated from more than ",
+                       "{years_min} but less than {years_max} years worth of data")) %>%
   kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
   column_spec(str_which(names(t), "Aquifer Type"), width = "7em", latex_valign = "m") %>%
   column_spec(str_which(names(t), "Percentile Class"), width = "8em", latex_valign = "m", 
@@ -162,7 +164,7 @@ for(ow in ows) {
   hist <- filter(w_hist, ow == !!ow)
   date <- filter(latest_date, ow == !!ow)
   
-  g1 <- well_plot_perc(full, hist, date)
+  g1 <- well_plot_perc(full, hist, date, years_min, years_max)
   g2 <- well_plot_hist(full, hist, date_range, date, wrap_year = TRUE)
   
   g <- g1 / g2 + plot_layout(heights = c(1, 2))

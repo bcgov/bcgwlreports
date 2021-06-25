@@ -32,7 +32,8 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
   g
 }
 
-well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
+well_plot_perc <- function(full, hist, latest_date = NULL,
+                           years_min, years_max, legend = "right") {
 
   year <- full %>%
     filter(!is.na(Value)) %>%
@@ -60,16 +61,38 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
     range_name <- glue("Historical range of min & max ({hist$start_year[1]} - ",
                        "{hist$end_year[1]})")
 
-    caption <- if_else(nrow(hist) > 0,
-                       "Not enough non-missing data to calculate percentiles",
-                       NA_character_)
+    caption <- case_when(
+      nrow(hist) == 0 ~ "Not enough non-missing data to calculate percentiles",
+      any(hist$quality_hist != "good") ~
+        as.character(
+          glue("Data quality for percentiles are indicated above the figure\n",
+               "Black = 'Fair' ({years_min} <= years of data < {years_max}); ",
+               "Red = 'Poor' (years of data < {years_min})")),
+      TRUE ~ NA_character_)
 
-    p <- well_plots_base(title = title, legend = legend, caption = caption)
+    p <- well_plots_base(title = title, legend = legend, caption = caption) +
+      theme(plot.subtitle = element_text(size = 14))
 
     if(nrow(hist) > 0) {
+      # Get position for percentile quality points
+      y <- hist %>%
+        summarize(min = min(min), max = max(max), range = max - min,
+                  y = min - (range * 0.1)) %>%
+        pull(y)
+
       p <- p +
         geom_ribbon(data = hist, alpha = 0.35,
                     aes(x = Date, ymin = q_low, ymax = q_high, fill = nice))
+
+      if(nrow(fair <- filter(hist, quality_hist == "fair")) > 0) {
+        p <- p +
+          annotate(geom = "point", x = fair$Date, y = y, size = 0.01)
+      }
+      if(nrow(poor <- filter(hist, quality_hist == "poor")) > 0) {
+        p <- p +
+          annotate(geom = "point", x = poor$Date, y = y, size = 0.01,
+                   colour = "red")
+      }
     }
     p <- p +
       geom_line(data = data, aes(x = Date, y = Value, colour = Approval,
@@ -78,14 +101,14 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
     if(!is.null(latest_date) &&
        nrow(latest_date) > 0 &&
        latest_date$Date %in% data$Date) {
-      p <-  p +
-        geom_point(data = latest_date, size = 4,
-                   aes(x = Date, y = Value, shape = "Latest Date")) +
-        guides(shape = guide_legend(override.aes = list(colour = "black",
-                                                        fill = "black",
-                                                        shape = 21)))
+      p <- p +
+        geom_point(data = latest_date, size = 3,
+                   aes(x = Date, y = Value, shape = "Latest Report Date"),
+                   fill = "black")
     }
-  p
+
+    p +
+      scale_shape_manual(values = 21)
 
   } else {
     well_plots_base() +
@@ -131,7 +154,7 @@ well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
     latest_date$yr_bin <- data$yr_bin[nrow(data)]
     p <- p +
       geom_point(data = latest_date, size = 4,
-                 aes(x = Date, y = Value, shape = "Latest Date")) +
+                 aes(x = Date, y = Value, shape = "Latest Report Date")) +
       guides(shape = guide_legend(override.aes = list(colour = "black",
                                                       fill = "black",
                                                       shape = 21)))
