@@ -156,9 +156,10 @@ date_range <- c(date_range - years(20), date_range)
 latest_date <- w_dates %>% 
   group_by(ow) %>% 
   filter(!is.na(Value)) %>%
-  filter(Date == max(Date))
+  filter(Date == max(Date)) %>%
+  filter(CurrentYear) #Keep only ones that are in Table 4?
 
-for(ow in ows) {
+for(ow in sort(ows)) {
   cat(glue("### {ow}\n\n"))
   full <- filter(w_full, ow == !!ow)
   hist <- filter(w_hist, ow == !!ow)

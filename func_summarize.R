@@ -48,6 +48,7 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
               {glue_collapse(ows[o], sep = ',')}),
          call. = FALSE)
   }
+  ows <- sort(ows)
 
   message(glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
   w_full <- well_prep(ows, water_year_start = 10, report_dates)
