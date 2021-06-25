@@ -260,12 +260,15 @@ well_percentiles <- function(w_comp) {
     ungroup()
 }
 
-well_quantiles <- function(values) {
-  perc_values %>%
-    mutate(q_low = quantile(values, perc_values$low),
-           q_high = quantile(values, perc_values$high)) %>%
+well_quantiles <- function(values, minmax = TRUE) {
+  p_values <- perc_values
+  if(!minmax) p_values <- filter(p_values, !class %in% c("p_max", "p_min"))
+
+  p_values %>%
+    mutate(q_low = quantile(values, p_values$low, na.rm = TRUE),
+           q_high = quantile(values, p_values$high, na.rm = TRUE)) %>%
     select(nice, q_low, q_high) %>%
-    mutate(nice = factor(nice, levels = perc_values$nice))
+    mutate(nice = factor(nice, levels = p_values$nice))
 }
 
 

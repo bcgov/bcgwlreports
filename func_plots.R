@@ -14,6 +14,7 @@
 
 
 well_plots_base <- function(title = "", legend = "right", caption = NA) {
+  p_values <- filter(perc_values, !class %in% c("p_max", "p_min"))
   g <- ggplot() +
     theme_bw() +
     theme(legend.title = element_blank(), legend.position = legend,
@@ -24,7 +25,7 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
     scale_x_date(expand = c(0, 0)) +
     scale_size_manual(values = setNames(plot_values$size, plot_values$type)) +
     scale_colour_manual(values = setNames(plot_values$colour, plot_values$type)) +
-    scale_fill_manual(values = setNames(perc_values$colour, perc_values$nice)) +
+    scale_fill_manual(values = setNames(p_values$colour, p_values$nice)) +
     labs(x = "Day of Year", y = "DBG (m)", subtitle = title)
 
   if(!is.na(caption)) g <- g + labs(caption = caption)
@@ -45,7 +46,7 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
     hist <- mutate(hist,
                    Date = as_date(DayofYear, origin = origin),
                    Approval = "Median",
-                   q = map(v, well_quantiles)) %>%
+                   q = map(v, well_quantiles, minmax = FALSE)) %>%
       unnest(q)
 
     data <- select(recent, Date, Approval, Value) %>%
