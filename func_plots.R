@@ -36,8 +36,10 @@ well_plot_perc <- function(full, hist, latest_date = NULL, legend = "right") {
 
   year <- full %>%
     filter(!is.na(Value)) %>%
-    summarize(yr = max(WaterYear)) %>%
-    pull(yr)
+    count(WaterYear) %>%
+    filter(n >= 7) %>%   # Must have at least one week of data
+    slice(n()) %>%
+    pull(WaterYear)
 
   recent <- filter(full, WaterYear == year)
 
