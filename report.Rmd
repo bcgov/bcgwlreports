@@ -178,7 +178,17 @@ for(ow in sort(ows)) {
 
 \newpage
 
-## Appendix - Dates
+## Appendix A - Dates
+
+If data isn't available for an exact reporting date, a date with data 
+within a `r within * 2 + 1` day window around the reporting date is chosen instead.
+If there are multiple dates with data, the dates are ranked based on their historical data 
+quality (for calculating percentiles) and their nearness to the original date indicated.
+The top date is then chosen for that well and that reporting date. 
+
+This table lists the original reporting dates, and the actual dates used for each 
+observation well. 
+
 ```{r appendix}
 w_dates %>%
   well_meta() %>%
@@ -193,11 +203,65 @@ w_dates %>%
   rename(Region = area_name, `Geographic\nArea` = district_name, `Obs.\nWell` = ow) %>%
   kable(booktabs = TRUE, longtable = TRUE, format = "latex", digits = 2, linesep = "",
         escape = FALSE,
-        caption = glue("\\textbf{{Well numbers and exact reporting dates}}\\\\",
+        caption = glue("\\textbf{{Exact reporting dates}}\\\\",
                        "Blank cells indicate no data (i.e. no date with ",
                        "non-missing values within a {within*2 + 1}-day window ",
                        "around the reporting date).\\\\")) %>%
   kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
   add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
+```
+
+
+\newpage
+
+## Appendix B - Calculations
+
+### General details
+- Water year starts in October
+- Well measurements are all in Depth Below Ground in metres
+- Current Water Year plots show data for the most recent water year with at least
+  1 week of data (7 days).
+
+### Percentiles
+- Percentiles are calculated individually for each day of the year for each well
+- 366 day in leap years is omitted
+- They are based on data in the last `r years_max` years starting in the Water
+  Year before the current one
+- "Good" quality data have 'Approved' historical values for all `r years_max`
+  years
+- "Fair" quality data have 'Approved' historical values for >= `r years_min`
+  but < `r years_max` years
+- "Poor" quality data have 'Approved' historical values for < `r years_min` 
+  years and are not used (percentiles for that well on that day of the year are
+  missing from the figures and tables).
+
+\newpage
+
+## Appendix C - Run info
+
+**Date/Time:** `r Sys.time()`
+
+
+### Parameters
+
+- **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
+- **Days in Window** (`within`): `r within`
+  - Total window around (and including) a date is **`r within * 2 + 1` days**
+- **Percentile Calculations**
+  - **Min number of years** (`years_min`) - `r years_min`
+  - **Max no. years** (`years_max`) - `r years_max`
+  
+### Session Info
+
+**Platform**
+
+```{r}
+sessioninfo::platform_info()
+```
+
+**Packages**
+
+```{r}
+sessioninfo::package_info()
 ```
 
