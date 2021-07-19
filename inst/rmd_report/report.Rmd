@@ -35,6 +35,14 @@ params:
 ---
 
 ```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(glue)
+library(lubridate)
+library(stringr)
+library(patchwork)
+
 knitr::opts_chunk$set(echo = FALSE)
 options(knitr.kable.NA = '')
 w_full <- params$w_full
@@ -190,25 +198,15 @@ This table lists the original reporting dates, and the actual dates used for eac
 observation well. 
 
 ```{r appendix}
-w_dates %>%
-  well_meta() %>%
-  mutate(ow = ow_link(ow),
-         area_name = str_remove_all(area_name, "( Natural Resource )|(Region)|(Area)"),
-         district_name = str_remove(district_name, " Natural Resource District"),
-         Value = as.character(round(Value, 2)), 
-         Date = if_else(is.na(Value), as_date(NA), Date)) %>%
-  arrange(area_name, district_name, ow, desc(report_dates)) %>%
-  select(area_name, district_name, ow, report_dates, Date) %>%
-  pivot_wider(names_from = "report_dates", values_from = "Date") %>%
-  rename(Region = area_name, `Geographic\nArea` = district_name, `Obs.\nWell` = ow) %>%
+appendix_dates(w_dates) %>%
   kable(booktabs = TRUE, longtable = TRUE, format = "latex", digits = 2, linesep = "",
-        escape = FALSE,
-        caption = glue("\\textbf{{Exact reporting dates}}\\\\",
-                       "Blank cells indicate no data (i.e. no date with ",
-                       "non-missing values within a {within*2 + 1}-day window ",
-                       "around the reporting date).\\\\")) %>%
-  kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
-  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
+          escape = FALSE,
+          caption = glue("\\textbf{{Exact reporting dates}}\\\\",
+                         "Blank cells indicate no data (i.e. no date with ",
+                         "non-missing values within a {within*2 + 1}-day window ",
+                         "around the reporting date).\\\\")) %>%
+    kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
+    add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
 ```
 
 

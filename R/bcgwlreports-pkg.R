@@ -12,15 +12,14 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-ow_n <- function(ows, numeric = TRUE) {
-  o <- str_extract(ows, "[0-9]{3}")
-  if(numeric) o <- as.numeric(o)
-  o
-}
+#' BC Governement Groundwater Level Reports
+#'
+#' Create reproducible reports of current groundwater statuses.
+#'
+#' @docType package
+#' @name bcgwlreports-package
+#' @aliases bcgwlreports bcgwlreports-package
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
 
-ow_c <- function(ows) {
-  glue("OW{str_pad(ows, '3', pad = 0)}") %>%
-    as.character()
-}
-
-ow_link <- function(ow) glue("\\hyperref[{tolower(ow)}]{{{ow}}}")
+NULL
