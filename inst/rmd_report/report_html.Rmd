@@ -1,0 +1,231 @@
+---
+title: "Observation Wells Groundwater Levels"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+params: 
+  w_full: ""
+  w_hist: ""
+  w_comp: ""
+  w_perc: ""
+  w_dates: ""
+  report_dates: ""
+  within: ""
+  years_min: ""
+  years_max: ""
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(glue)
+library(lubridate)
+library(stringr)
+library(patchwork)
+
+knitr::opts_chunk$set(echo = FALSE)
+options(knitr.kable.NA = '')
+
+w_full <- params$w_full
+w_hist <- params$w_hist
+w_comp <- params$w_comp
+w_perc <- params$w_perc
+w_dates <- params$w_dates
+within <- params$within
+report_dates <- params$report_dates
+years_min <- params$years_min
+years_max <- params$years_max
+
+ows <- unique(w_full$ow)
+
+window <- w_perc %>%
+  filter(window) %>%
+  pull(report_dates) %>%
+  unique()
+
+note_value <- glue("value within a {within*2 + 1}-day window centred on the reporting date")
+note_values <- glue("includes values from a {within*2 + 1}-day window centred on the reporting date")
+note_no_data <- "Blank cells indicate no data"
+
+```
+
+## Section 1 - Well numbers and reporting dates
+
+```{r table_1, results = "asis"}
+well_table_overview(w_dates) %>%
+  kable(format = "html", digits = 2, escape = FALSE,
+        caption = "Table 1") %>%
+  kable_styling() %>%
+  footnote(general = c("Values are depth below ground (m) for a given well/date", 
+                       note_no_data),
+           symbol = note_value,
+           symbol_manual = "*")
+```
+
+
+### Wells Below Normal
+
+**Proportion of wells Below Normal or Much Below Normal**
+
+```{r table_2}
+well_table_below_norm(w_perc, window) %>%
+  kable(format = "html",
+        caption = "Table 2") %>%
+  kable_styling() %>%
+  footnote(general = c(glue("(X/Y) indicates X wells with low values out of ",
+                            "Y wells total for that date/category"),
+                       note_no_data),
+           symbol = note_values,
+           symbol_manual = "*")
+```
+
+### Groundwater Level Status
+
+**Number of wells in each percentile class by date**
+
+```{r table_3}
+well_table_status(w_perc, perc_values, window) %>%
+  select(` ` = class, everything()) %>%
+  kable(format = "html", caption = "Table 3") %>%
+  kable_styling() %>%
+  column_spec(1, background = c(perc_values$colour, "white"),
+              color = c(perc_values$txt_colour, "black")) %>%
+  footnote(symbol = note_values,
+           symbol_manual = c("*"))
+```
+
+## Section 2 - Summary
+
+
+```{r table_4_prep}
+t <- well_table_summary(w_dates, w_hist, perc_values)
+bg_colour <- t$bg_colour
+txt_colour <- t$txt_colour
+t <- select(t, -bg_colour, -txt_colour)
+```
+
+Information on observation wells in `r year(t[["Latest\nDate"]][1])`")
+
+```{r table_4}
+t %>%
+  kable(format = "html", escape = FALSE,
+        caption = "Table 4") %>%
+  kable_styling() %>%
+  footnote(general = c(glue("Includes comparison of latest water depth value ",
+                            "compared to last year's value"),
+                       "Values/Medians are in meters below ground",
+                       glue("Perc. Years are the number of years included in ",
+                            "the percentile calculation.")),
+           symbol = "indicates Values with an Approval Status of 'Working'",
+           symbol_manual = "*") %>%
+  column_spec(str_which(names(t), "Percentile Class"), 
+              background = bg_colour, color = txt_colour)
+```
+
+
+## Section 3 - Plots
+
+```{r s3_obs_well_plots, results = "asis", fig.asp = 1.25, fig.width = 10}
+date_range <- w_full %>%
+  filter(CurrentYear) %>%
+  select(WaterYear, water_year_start) %>%
+  distinct() %>%
+  glue_data("{WaterYear}-{water_year_start}-01") %>%
+  ymd()
+date_range <- c(date_range - years(20), date_range)
+
+latest_date <- w_dates %>% 
+  group_by(ow) %>% 
+  filter(!is.na(Value)) %>%
+  filter(Date == max(Date)) %>%
+  filter(CurrentYear) #Keep only ones that are in Table 4?
+
+for(ow in sort(ows)) {
+  cat(glue("\n\n\n### {ow}\n\n\n"))
+  full <- filter(w_full, ow == !!ow)
+  hist <- filter(w_hist, ow == !!ow)
+  date <- filter(latest_date, ow == !!ow)
+  
+  g1 <- well_plot_perc(full, hist, date, years_min, years_max)
+  g2 <- well_plot_hist(full, hist, date_range, date, wrap_year = TRUE)
+  
+  g <- g1 / g2 + plot_layout(heights = c(1, 2))
+  print(g)
+}
+```
+
+
+## Appendix A - Dates
+
+If data isn't available for an exact reporting date, a date with data 
+within a `r within * 2 + 1` day window around the reporting date is chosen instead.
+If there are multiple dates with data, the dates are ranked based on their historical data 
+quality (for calculating percentiles) and their nearness to the original date indicated.
+The top date is then chosen for that well and that reporting date. 
+
+This table lists the original reporting dates, and the actual dates used for each 
+observation well. 
+
+```{r appendix}
+appendix_dates(w_dates) %>%
+  kable(format = "html", digits = 2, escape = FALSE,
+        caption = "Table A1") %>%
+  kable_styling() %>%
+  footnote(general = note_no_data) %>%
+  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
+```
+
+
+## Appendix B - Calculations
+
+### General details
+- Water year starts in October
+- Well measurements are all in Depth Below Ground in metres
+- Current Water Year plots show data for the most recent water year with at least
+  1 week of data (7 days).
+
+### Percentiles
+- Percentiles are calculated individually for each day of the year for each well
+- 366 day in leap years is omitted
+- They are based on data in the last `r years_max` years starting in the Water
+  Year before the current one
+- "Good" quality data have 'Approved' historical values for all `r years_max`
+  years
+- "Fair" quality data have 'Approved' historical values for >= `r years_min`
+  but < `r years_max` years
+- "Poor" quality data have 'Approved' historical values for < `r years_min` 
+  years and are not used (percentiles for that well on that day of the year are
+  missing from the figures and tables).
+
+
+## Appendix C - Run info
+
+**Date/Time:** `r Sys.time()`
+
+
+### Parameters
+
+- **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
+- **Days in Window** (`within`): `r within`
+  - Total window around (and including) a date is **`r within * 2 + 1` days**
+- **Percentile Calculations**
+  - **Min number of years** (`years_min`) - `r years_min`
+  - **Max no. years** (`years_max`) - `r years_max`
+  
+### Session Info
+
+**Platform**
+
+```{r}
+sessioninfo::platform_info()
+```
+
+**Packages**
+
+```{r}
+sessioninfo::package_info()
+```
+

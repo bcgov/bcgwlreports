@@ -176,11 +176,11 @@ well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
 }
 
 
-well_table_overview <- function(w_dates) {
+well_table_overview <- function(w_dates, format = "html") {
   w_dates %>%
     well_meta() %>%
     dplyr::mutate(
-      ow = ow_link(.data$ow),
+      ow = ow_link(.data$ow, format = format),
       area_name = stringr::str_remove_all(.data$area_name,
                                           "( Natural Resource )|(Region)|(Area)"),
       district_name = stringr::str_remove(.data$district_name,
@@ -252,13 +252,10 @@ well_table_status <- function(w_perc, perc_values, window) {
                                    as.character(.data$report_dates))) %>%
     tidyr::pivot_wider(names_from = "report_dates", values_from = "n") %>%
     dplyr::arrange(.data$class) %>%
-    dplyr::left_join(dplyr::select(perc_values, "colour", "nice"),
-                     by = c("class" = "nice")) %>%
-    dplyr::mutate(colour = tidyr::replace_na(.data$colour, "white")) %>%
-    dplyr::select("colour", "class", dplyr::everything())
+    dplyr::select("class", dplyr::everything())
 }
 
-well_table_summary <- function(w_dates, w_hist, perc_values) {
+well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
 
   t <- well_hist_compare(w_dates, w_hist)
 
@@ -266,6 +263,8 @@ well_table_summary <- function(w_dates, w_hist, perc_values) {
     dplyr::filter(!.data$CurrentYear) %>%
     dplyr::select("ow", "value_last_year" = "Value", "report_dates") %>%
     dplyr::mutate(report_dates = .data$report_dates + lubridate::years(1))
+
+  if(format == "pdf") percent <- "\\%" else percent <- "%"
 
   t %>%
     well_meta() %>%
@@ -278,7 +277,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values) {
     dplyr::filter(.data$Date == .data$keep) %>%
     dplyr::left_join(last_year, by = c("ow", "report_dates")) %>%
     dplyr::mutate(
-      ow = ow_link(.data$ow),
+      ow = ow_link(.data$ow, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
       Name = "",
       area_name = stringr::str_remove_all(.data$area_name,
@@ -293,7 +292,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values) {
       class = tidyr::replace_na(.data$class, ""),
       percentile = dplyr::if_else(is.na(.data$percentile),
                                   glue::glue(""),
-                                  glue::glue(" ({round((1 - percentile) * 100)}\\%)")),
+                                  glue::glue(" ({round((1 - percentile) * 100)}{percent})")),
       percentile = glue::glue("{class}{percentile}"),
       n_years = dplyr::case_when(
         .data$percentile == "" ~ glue::glue(""),
@@ -316,11 +315,11 @@ well_table_summary <- function(w_dates, w_hist, perc_values) {
       "Last Year's\nValue" = "value_last_year", "Median" = "median")
 }
 
-appendix_dates <- function(w_dates) {
+appendix_dates <- function(w_dates, format = "html") {
   w_dates %>%
     well_meta() %>%
     dplyr::mutate(
-      ow = ow_link(.data$ow),
+      ow = ow_link(.data$ow, format = format),
       area_name = stringr::str_remove_all(
         .data$area_name, "( Natural Resource )|(Region)|(Area)"),
       district_name = stringr::str_remove(.data$district_name,

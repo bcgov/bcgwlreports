@@ -70,12 +70,23 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
   w_perc <- well_percentiles(w_comp)
 
   message("- Writing report")
-  rmarkdown::render(system.file("rmd_report", "report.Rmd", package = "bcgwlreports"),
+
+  rmarkdown::render(system.file("rmd_report", "report_html.Rmd",
+                                package = "bcgwlreports"),
                     params = list("w_full" = w_full, "w_hist" = w_hist,
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,
                                   "within" = within,
                                   "years_min" = years_min, "years_max" = years_max),
                     output_dir = out_dir,
-                    output_file = glue::glue("report_{Sys.Date()}.pdf"))
+                    output_file = glue::glue("report_{Sys.Date()}.html"))
+
+  # rmarkdown::render(system.file("rmd_report", "report_pdf.Rmd", package = "bcgwlreports"),
+  #                   params = list("w_full" = w_full, "w_hist" = w_hist,
+  #                                 "w_comp" = w_hist, "w_perc" = w_perc,
+  #                                 "w_dates" = w_dates, "report_dates" = report_dates,
+  #                                 "within" = within,
+  #                                 "years_min" = years_min, "years_max" = years_max),
+  #                   output_dir = out_dir,
+  #                   output_file = glue::glue("report_{Sys.Date()}.pdf"))
 }

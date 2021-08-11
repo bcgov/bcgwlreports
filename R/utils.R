@@ -23,7 +23,10 @@ ow_c <- function(ows) {
     as.character()
 }
 
-ow_link <- function(ow) glue::glue("\\hyperref[{tolower(ow)}]{{{ow}}}")
+ow_link <- function(ow, format) {
+  if(format == "pdf") ow <- glue::glue("\\hyperref[{tolower(ow)}]{{{ow}}}")
+  if(format == "html") ow <- glue::glue("<a href = '#{tolower(ow)}'>{ow}</a>")
+}
 
 find_continuous <- function(w) {
   first_date <- w %>%
