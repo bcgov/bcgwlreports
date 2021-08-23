@@ -68,12 +68,11 @@ well_meta <- function(w) {
     dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow"))
 }
 
-well_hist <- function(w_full, years_min, years_max) {
+well_hist <- function(w_full, years_min) {
   current_year <- unique(w_full$WaterYear[w_full$CurrentYear])
 
   w_full %>%
-    dplyr::filter(.data$WaterYear >= !!current_year - !!years_max,
-                  !.data$CurrentYear,
+    dplyr::filter(!.data$CurrentYear,
                   .data$Approval == "Approved",
                   !is.na(.data$Value)) %>%
     dplyr::group_by(.data$ow, .data$DayofYear) %>%
@@ -87,10 +86,8 @@ well_hist <- function(w_full, years_min, years_max) {
                      v = list(.data$Value),
                      p = list(stats::ecdf(.data$Value)), .groups = "drop") %>%
     dplyr::mutate(
-      quality_hist = dplyr::case_when(.data$n_years == !!years_max ~ "good",
-                                      .data$n_years >= !!years_min ~ "fair",
-                                      TRUE ~ "poor"),
-      quality_hist = factor(.data$quality_hist, levels = c("poor", "fair", "good")),
+      quality_hist = dplyr::if_else(.data$n_years >= !!years_min, "good", "poor"),
+      quality_hist = factor(.data$quality_hist, levels = c("poor", "good")),
       v = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$v),
       p = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$p))
 }
@@ -172,10 +169,6 @@ well_quantiles <- function(values, minmax = TRUE) {
 well_regions <- function(ows) {
   data_load("wells_sf") %>%
     dplyr::filter(.data$ow %in% ows) %>%
-    sf::st_join(data_load("regions")) %>%
     sf::st_drop_geometry() %>%
-    dplyr::mutate(area_name = dplyr::if_else(
-      .data$area_name == "Coast Natural Resource Area",
-      .data$region_name, .data$area_name)) %>%
-    dplyr::select(-"region_name")
+    dplyr::left_join(locs, by = "ow")
 }

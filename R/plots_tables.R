@@ -13,6 +13,14 @@
 # the License.
 
 
+bcgwl_style <- function(kable_input, ...) {
+  kable_classic(kable_input,
+                lightable_options = "hover", full_width = FALSE,
+                html_font = "\"Arial\", \"Source Sans Pro\", sans-serif",
+                ...)
+}
+
+
 well_plots_base <- function(title = "", legend = "right", caption = NA) {
   p_values <- dplyr::filter(perc_values, !.data$class %in% c("p_max", "p_min"))
   g <- ggplot2::ggplot() +
@@ -33,7 +41,7 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
 }
 
 well_plot_perc <- function(full, hist, latest_date = NULL,
-                           years_min, years_max, legend = "right") {
+                           years_min, legend = "right") {
 
   year <- full %>%
     dplyr::filter(!is.na(.data$Value)) %>%
@@ -61,41 +69,20 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
     range_name <- glue::glue("Historical range of min & max ({hist$start_year[1]} - ",
                              "{hist$end_year[1]})")
 
-    caption <- dplyr::case_when(
-      nrow(hist) == 0 ~ "Not enough non-missing data to calculate percentiles",
-      any(hist$quality_hist != "good") ~
-        as.character(
-          glue::glue("Data quality for percentiles are indicated above the figure\n",
-                     "Black = 'Fair' ({years_min} <= years of data < {years_max}); ",
-                     "Red = 'Poor' (years of data < {years_min})")),
-      TRUE ~ NA_character_)
+    caption <- NA_character_
+    if(nrow(hist) == 0) {
+      caption <- "Not enough non-missing data to calculate percentiles"
+    }
+
 
     p <- well_plots_base(title = title, legend = legend, caption = caption) +
       ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 14))
 
     if(nrow(hist) > 0) {
-      # Get position for percentile quality points
-      y <- hist %>%
-        dplyr::summarize(min = min(.data$min),
-                         max = max(.data$max),
-                         range = .data$max - .data$min,
-                         y = .data$min - (.data$range * 0.1)) %>%
-        dplyr::pull(.data$y)
-
       p <- p +
         ggplot2::geom_ribbon(data = hist, alpha = 0.35,
                              ggplot2::aes_string(x = "Date", ymin = "q_low",
                                                  ymax = "q_high", fill = "nice"))
-
-      if(nrow(fair <- dplyr::filter(hist, .data$quality_hist == "fair")) > 0) {
-        p <- p +
-          ggplot2::annotate(geom = "point", x = fair$Date, y = y, size = 0.01)
-      }
-      if(nrow(poor <- dplyr::filter(hist, .data$quality_hist == "poor")) > 0) {
-        p <- p +
-          ggplot2::annotate(geom = "point", x = poor$Date, y = y, size = 0.01,
-                            colour = "red")
-      }
     }
     p <- p +
       ggplot2::geom_line(data = data,
@@ -181,18 +168,14 @@ well_table_overview <- function(w_dates, format = "html") {
     well_meta() %>%
     dplyr::mutate(
       ow = ow_link(.data$ow, format = format),
-      area_name = stringr::str_remove_all(.data$area_name,
-                                          "( Natural Resource )|(Region)|(Area)"),
-      district_name = stringr::str_remove(.data$district_name,
-                                          " Natural Resource District"),
       Value = as.character(round(.data$Value, 2)),
       Value = dplyr::if_else(.data$Date != .data$report_dates & !is.na(.data$Value),
                              as.character(glue::glue("{.data$Value}*")),
                              .data$Value)) %>%
-    dplyr::arrange(.data$area_name, .data$district_name, .data$ow, dplyr::desc(.data$Date)) %>%
-    dplyr::select("area_name", "district_name", "ow", "Value", "report_dates") %>%
-    tidyr::pivot_wider(names_from = "report_dates", values_from = "Value") %>%
-    dplyr::rename("Region" = "area_name", "Geographic\nArea" = "district_name", "Obs.\nWell" = "ow")
+    dplyr::arrange(.data$area, .data$location, .data$ow, dplyr::desc(.data$Date)) %>%
+    dplyr::select("region", "Area" = "area", "Location Name" = location,
+                  "Obs.\nWell" = "ow", "Value", "report_dates") %>%
+    tidyr::pivot_wider(names_from = "report_dates", values_from = "Value")
 }
 
 well_table_below_norm <- function(w_perc, window) {
@@ -279,40 +262,37 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::mutate(
       ow = ow_link(.data$ow, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
-      Name = "",
-      area_name = stringr::str_remove_all(.data$area_name,
-                                          "( Natural Resource )|(Region)|(Area)"),
-      district_name = stringr::str_remove(.data$district_name,
-                                          "Natural Resource District"),
       Value = as.character(round(.data$Value, 2)),
       Value = dplyr::if_else(.data$Approval == "Working" & !is.na(.data$Value),
                              as.character(glue::glue("{Value}*")),
                              .data$Value),
       value_last_year = round(.data$value_last_year, 2),
       class = tidyr::replace_na(.data$class, ""),
-      percentile = dplyr::if_else(is.na(.data$percentile),
-                                  glue::glue(""),
-                                  glue::glue(" ({round((1 - percentile) * 100)}{percent})")),
+      percentile = dplyr::if_else(
+        is.na(.data$percentile),
+        glue::glue(""),
+        glue::glue(" ({round((1 - percentile) * 100)}{percent})")),
       percentile = glue::glue("{class}{percentile}"),
       n_years = dplyr::case_when(
         .data$percentile == "" ~ glue::glue(""),
-        .data$quality_hist == "fair" ~ glue::glue("{n_years}**"),
         TRUE ~ glue::glue(.data$n_years)),
       median = round(.data$median, 2)) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(.data$area_name, .data$district_name, .data$ow) %>%
+    dplyr::arrange(.data$region, .data$area, .data$location, .data$ow) %>%
     dplyr::mutate(
       bg_colour = rlang::set_names(!!perc_values$colour, !!perc_values$nice)[.data$class],
       bg_colour = tidyr::replace_na(.data$bg_colour, "white"),
       txt_colour = rlang::set_names(!!perc_values$txt_colour, !!perc_values$nice)[.data$class],
-      txt_colour = tidyr::replace_na(.data$txt_colour, "black")) %>%
+      txt_colour = tidyr::replace_na(.data$txt_colour, "black"),
+      percentile = glue::glue("{percentile}<br><small>(n = {n_years})</small>")) %>%
     dplyr::select(
       "bg_colour", "txt_colour",
-      "Region" = "area_name", "Geographic\nArea" = "district_name", "Name",
+      "region",
+      "Area" = "area", "Location Name" = "location",
       "Obs.\nWell" = "ow", "Aquifer Type" = "type",
       "Latest\nDate" = "Date", "Latest\nValue" = "Value",
-      "Percentile Class" = "percentile", "Perc.\nYears"= "n_years",
-      "Last Year's\nValue" = "value_last_year", "Median" = "median")
+      "Percentile Class" = "percentile",
+      "Last Year's\nValue" = "value_last_year")
 }
 
 appendix_dates <- function(w_dates, format = "html") {
@@ -320,18 +300,13 @@ appendix_dates <- function(w_dates, format = "html") {
     well_meta() %>%
     dplyr::mutate(
       ow = ow_link(.data$ow, format = format),
-      area_name = stringr::str_remove_all(
-        .data$area_name, "( Natural Resource )|(Region)|(Area)"),
-      district_name = stringr::str_remove(.data$district_name,
-                                          " Natural Resource District"),
       Value = as.character(round(.data$Value, 2)),
       Date = dplyr::if_else(is.na(.data$Value),
                             lubridate::as_date(NA),
                             .data$Date)) %>%
-    dplyr::arrange(.data$area_name, .data$district_name,
+    dplyr::arrange(.data$region, .data$area, .data$location,
                    .data$ow, dplyr::desc(.data$report_dates)) %>%
-    dplyr::select("area_name", "district_name", "ow", "report_dates", "Date") %>%
-    tidyr::pivot_wider(names_from = "report_dates", values_from = "Date") %>%
-    dplyr::rename("Region" = "area_name", "Geographic\nArea" = "district_name",
-                  "Obs.\nWell" = "ow")
+    dplyr::select("region", "Area" = "area", "Location Name" = "location",
+                  "Obs.\nWell" = "ow", "report_dates", "Date") %>%
+    tidyr::pivot_wider(names_from = "report_dates", values_from = "Date")
 }

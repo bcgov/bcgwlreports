@@ -19,8 +19,6 @@
 #' @param within Numeric. Number of days within which to get alternative dates
 #' @param years_min Numeric. Minimum number of years required to to calculate a
 #'   percentiles
-#' @param years_max Numeric. Maximum number of years used to to calculate a
-#'   percentiles (starting with previous year).
 #' @param out_dir Character. Location of output report. Defaults to working directory.
 #' @param cache_age Logical. Maxmum age in days of cached datasets (not obs well
 #'   data, but metadata related to regional maps, aquifer and wells).
@@ -37,8 +35,7 @@
 #' @export
 #'
 well_report <- function(ows, report_dates = Sys.Date(), within = 7,
-                        years_min = 5, years_max = 10,
-                        out_dir = ".", cache_age = 7) {
+                        years_min = 5, out_dir = ".", cache_age = 7) {
 
   report_dates <- dates_check(report_dates)
 
@@ -58,7 +55,7 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
   message(glue::glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
   w_full <- well_prep(ows, water_year_start = 10, report_dates)
   message("- Summarizing historical statistics")
-  w_hist <- well_hist(w_full, years_min, years_max)
+  w_hist <- well_hist(w_full, years_min)
 
   message("- Calculating best report dates")
   w_dates <- well_dates(w_full, w_hist, report_dates, within)
@@ -77,7 +74,7 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,
                                   "within" = within,
-                                  "years_min" = years_min, "years_max" = years_max),
+                                  "years_min" = years_min),
                     output_dir = out_dir,
                     output_file = glue::glue("report_{Sys.Date()}.html"))
 
@@ -86,7 +83,7 @@ well_report <- function(ows, report_dates = Sys.Date(), within = 7,
   #                                 "w_comp" = w_hist, "w_perc" = w_perc,
   #                                 "w_dates" = w_dates, "report_dates" = report_dates,
   #                                 "within" = within,
-  #                                 "years_min" = years_min, "years_max" = years_max),
+  #                                 "years_min" = years_min),
   #                   output_dir = out_dir,
   #                   output_file = glue::glue("report_{Sys.Date()}.pdf"))
 }

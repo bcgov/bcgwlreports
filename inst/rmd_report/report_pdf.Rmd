@@ -31,7 +31,6 @@ params:
   report_dates: ""
   within: ""
   years_min: ""
-  years_max: ""
 ---
 
 ```{r setup, include=FALSE}
@@ -54,7 +53,6 @@ within <- params$within
 report_dates <- params$report_dates
 ows <- unique(w_full$ow)
 years_min <- params$years_min
-years_max <- params$years_max
 
 window <- w_perc %>%
   filter(window) %>%
@@ -173,7 +171,7 @@ for(ow in sort(ows)) {
   hist <- filter(w_hist, ow == !!ow)
   date <- filter(latest_date, ow == !!ow)
   
-  g1 <- well_plot_perc(full, hist, date, years_min, years_max)
+  g1 <- well_plot_perc(full, hist, date, years_min)
   g2 <- well_plot_hist(full, hist, date_range, date, wrap_year = TRUE)
   
   g <- g1 / g2 + plot_layout(heights = c(1, 2))

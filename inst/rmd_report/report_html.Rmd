@@ -14,8 +14,26 @@ params:
   report_dates: ""
   within: ""
   years_min: ""
-  years_max: ""
 ---
+
+```{css, echo=FALSE}
+h2 {
+  border-top: 2px solid;
+  padding-top: 10px;
+  margin-top: 30px;
+}
+
+.lightable-classic td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+body {
+  font-size: 12pt
+}
+```
+
+
 
 ```{r setup, include=FALSE}
 library(dplyr)
@@ -37,7 +55,6 @@ w_dates <- params$w_dates
 within <- params$within
 report_dates <- params$report_dates
 years_min <- params$years_min
-years_max <- params$years_max
 
 ows <- unique(w_full$ow)
 
@@ -49,86 +66,104 @@ window <- w_perc %>%
 note_value <- glue("value within a {within*2 + 1}-day window centred on the reporting date")
 note_values <- glue("includes values from a {within*2 + 1}-day window centred on the reporting date")
 note_no_data <- "Blank cells indicate no data"
-
 ```
 
-## Section 1 - Well numbers and reporting dates
+## Wells below normal
 
-```{r table_1, results = "asis"}
-well_table_overview(w_dates) %>%
-  kable(format = "html", digits = 2, escape = FALSE,
-        caption = "Table 1") %>%
-  kable_styling() %>%
-  footnote(general = c("Values are depth below ground (m) for a given well/date", 
-                       note_no_data),
-           symbol = note_value,
-           symbol_manual = "*")
+```{r wells_below_normal_prep}
+p <- well_table_below_norm(w_perc, window)
 ```
 
 
-### Wells Below Normal
-
-**Proportion of wells Below Normal or Much Below Normal**
-
-```{r table_2}
-well_table_below_norm(w_perc, window) %>%
-  kable(format = "html",
-        caption = "Table 2") %>%
-  kable_styling() %>%
-  footnote(general = c(glue("(X/Y) indicates X wells with low values out of ",
-                            "Y wells total for that date/category"),
-                       note_no_data),
-           symbol = note_values,
-           symbol_manual = "*")
+```{r wells_below_normal_overall}
+p %>%
+  filter(`Aquifer Type` == "Across all types") %>%
+  select(-"Aquifer Type") %>%
+  kable(format = "html", caption = "<center><strong>Overall</strong></center>",
+        align = "cccc") %>%
+  bcgwl_style() %>%
+  add_header_above(c("Current Year" = 2, "Last Year" = 2))
 ```
+
+```{r wells_below_normal_type}
+p %>%
+  filter(`Aquifer Type` != "Across all types") %>%
+  rename(" " = `Aquifer Type`) %>%
+  kable(format = "html", caption = "<center><strong>Aquifer Type</strong></center>",
+        align = "lcccc") %>%
+  bcgwl_style() %>%
+  add_header_above(c("", "Current Year" = 2, "Last Year" = 2))
+```
+
+
+```{r wells_below_normal_connectivity}
+p %>%
+  filter(`Aquifer Type` != "Across all types") %>%
+  rename(" " = `Aquifer Type`) %>%
+  kable(format = "html", align = "lcccc",
+        caption = "<center><strong>Hydraulic Connectivity</strong></center>") %>%
+  bcgwl_style() %>%
+  add_header_above(c("", "Current Year" = 2, "Last Year" = 2))
+```
+
+
+
+*Note:*  
+(X/Y) indicates X wells with low values out of Y wells total for that date/category  
+`r note_no_data`  
+* `r note_values`
 
 ### Groundwater Level Status
 
 **Number of wells in each percentile class by date**
 
-```{r table_3}
+```{r percentile_class}
 well_table_status(w_perc, perc_values, window) %>%
   select(` ` = class, everything()) %>%
-  kable(format = "html", caption = "Table 3") %>%
-  kable_styling() %>%
+  kable(format = "html", align = "lcccc") %>%
+  bcgwl_style() %>%
   column_spec(1, background = c(perc_values$colour, "white"),
               color = c(perc_values$txt_colour, "black")) %>%
   footnote(symbol = note_values,
-           symbol_manual = c("*"))
+           symbol_manual = c("*")) %>%
+  add_header_above(c("", "Current Year" = 2, "Last Year" = 2))
 ```
 
-## Section 2 - Summary
+## Well summaries
 
-
-```{r table_4_prep}
+```{r well_summaries_prep}
 t <- well_table_summary(w_dates, w_hist, perc_values)
 bg_colour <- t$bg_colour
 txt_colour <- t$txt_colour
 t <- select(t, -bg_colour, -txt_colour)
+
+index <- table(t$region)
+t <- select(t, -"region")
 ```
 
-Information on observation wells in `r year(t[["Latest\nDate"]][1])`")
+**Information on observation wells in `r year(t[["Latest\nDate"]][1])`**
 
-```{r table_4}
+```{r well_summaries}
 t %>%
-  kable(format = "html", escape = FALSE,
-        caption = "Table 4") %>%
-  kable_styling() %>%
+  kable(format = "html", escape = FALSE, align = "llllcccc") %>%
+  bcgwl_style() %>%
   footnote(general = c(glue("Includes comparison of latest water depth value ",
                             "compared to last year's value"),
                        "Values/Medians are in meters below ground",
-                       glue("Perc. Years are the number of years included in ",
+                       glue("n is the number of years included in ",
                             "the percentile calculation.")),
            symbol = "indicates Values with an Approval Status of 'Working'",
            symbol_manual = "*") %>%
   column_spec(str_which(names(t), "Percentile Class"), 
-              background = bg_colour, color = txt_colour)
+              background = bg_colour, color = txt_colour) %>%
+  pack_rows(index = index)
+
 ```
+  
 
+## Plots
 
-## Section 3 - Plots
-
-```{r s3_obs_well_plots, results = "asis", fig.asp = 1.25, fig.width = 10}
+```{r plots, results = "asis", fig.asp = 1.25, fig.width = 10}
 date_range <- w_full %>%
   filter(CurrentYear) %>%
   select(WaterYear, water_year_start) %>%
@@ -149,7 +184,7 @@ for(ow in sort(ows)) {
   hist <- filter(w_hist, ow == !!ow)
   date <- filter(latest_date, ow == !!ow)
   
-  g1 <- well_plot_perc(full, hist, date, years_min, years_max)
+  g1 <- well_plot_perc(full, hist, date, years_min)
   g2 <- well_plot_hist(full, hist, date_range, date, wrap_year = TRUE)
   
   g <- g1 / g2 + plot_layout(heights = c(1, 2))
@@ -170,12 +205,17 @@ This table lists the original reporting dates, and the actual dates used for eac
 observation well. 
 
 ```{r appendix}
-appendix_dates(w_dates) %>%
+a <- appendix_dates(w_dates)
+index <- table(a$region)
+
+a %>%
+  select(- "region") %>%
   kable(format = "html", digits = 2, escape = FALSE,
         caption = "Table A1") %>%
-  kable_styling() %>%
+  bcgwl_style() %>%
   footnote(general = note_no_data) %>%
-  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
+  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4)) %>%
+  pack_rows(index = index)
 ```
 
 
@@ -190,12 +230,7 @@ appendix_dates(w_dates) %>%
 ### Percentiles
 - Percentiles are calculated individually for each day of the year for each well
 - 366 day in leap years is omitted
-- They are based on data in the last `r years_max` years starting in the Water
-  Year before the current one
-- "Good" quality data have 'Approved' historical values for all `r years_max`
-  years
-- "Fair" quality data have 'Approved' historical values for >= `r years_min`
-  but < `r years_max` years
+- "Good" quality data have 'Approved' historical values for >= `r years_min` years
 - "Poor" quality data have 'Approved' historical values for < `r years_min` 
   years and are not used (percentiles for that well on that day of the year are
   missing from the figures and tables).
@@ -213,7 +248,6 @@ appendix_dates(w_dates) %>%
   - Total window around (and including) a date is **`r within * 2 + 1` days**
 - **Percentile Calculations**
   - **Min number of years** (`years_min`) - `r years_min`
-  - **Max no. years** (`years_max`) - `r years_max`
   
 ### Session Info
 

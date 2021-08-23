@@ -9,7 +9,6 @@ well_report(
   report_dates = Sys.Date(),
   within = 7,
   years_min = 5,
-  years_max = 10,
   out_dir = ".",
   cache_age = 7
 )
@@ -23,9 +22,6 @@ well_report(
 
 \item{years_min}{Numeric. Minimum number of years required to to calculate a
 percentiles}
-
-\item{years_max}{Numeric. Maximum number of years used to to calculate a
-percentiles (starting with previous year).}
 
 \item{out_dir}{Character. Location of output report. Defaults to working directory.}
 
