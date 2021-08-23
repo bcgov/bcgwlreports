@@ -52,5 +52,13 @@ type_values <- dplyr::tribble(~code, ~type,
                               "4a",  "Unconfined sand and gravel")
 
 
-usethis::use_data(data_types, perc_values, plot_values, type_values,
+locs <- readr::read_csv("data-raw/obswell_locations.csv") %>%
+  dplyr::rename_all(tolower) %>%
+  dplyr::rename(ow = well, region = area, area = subarea) %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(),
+                              ~ stringr::str_remove_all(., "\xa0") %>%
+                                stringr::str_trim()))
+
+
+usethis::use_data(data_types, perc_values, plot_values, type_values, locs,
                   internal = TRUE, overwrite = TRUE)
