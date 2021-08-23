@@ -33,7 +33,7 @@ perc_values <- dplyr::tribble(
   dplyr::mutate(colour = !!perc_colours)
 
 plot_values <- dplyr::tribble(~ type,     ~ size, ~ colour,
-                              "Working",  0.5,      "red",
+                              "Working",  0.75,      "red",
                               "Approved", 0.75,     "black",
                               "Median",   0.5,      "grey50")
 
