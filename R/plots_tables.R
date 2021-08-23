@@ -25,16 +25,18 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
   p_values <- dplyr::filter(perc_values, !.data$class %in% c("p_max", "p_min"))
   g <- ggplot2::ggplot() +
     ggplot2::theme_bw() +
-    ggplot2::theme(legend.title = ggplot2::element_blank(), legend.position = legend,
+    ggplot2::theme(legend.title = ggplot2::element_blank(),
+                   legend.position = legend,
                    legend.margin = ggplot2::margin(),
                    legend.box.spacing = ggplot2::unit(5, "pt"),
                    legend.spacing = ggplot2::unit(1, "pt")) +
     ggplot2::scale_y_reverse() +
     ggplot2::scale_x_date(expand = c(0, 0)) +
-    ggplot2::scale_size_manual(values = stats::setNames(plot_values$size, plot_values$type)) +
-    ggplot2::scale_colour_manual(values = stats::setNames(plot_values$colour, plot_values$type)) +
-    ggplot2::scale_fill_manual(values = stats::setNames(p_values$colour, p_values$nice)) +
-    ggplot2::labs(x = "Day of Year", y = "DBG (m)", subtitle = title)
+    ggplot2::scale_size_manual(
+      values = stats::setNames(plot_values$size, plot_values$type)) +
+    ggplot2::scale_fill_manual(
+      values = stats::setNames(p_values$colour, p_values$nice)) +
+    ggplot2::labs(x = "Day of Year", y = "Water Level (mbgs)", subtitle = title)
 
   if(!is.na(caption)) g <- g + ggplot2::labs(caption = caption)
   g
@@ -61,9 +63,10 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
       tidyr::unnest(q)
 
     data <- dplyr::select(recent, "Date", "Approval", "Value") %>%
-      dplyr::bind_rows(dplyr::select(hist, "Date", "Approval", "Value" = "median")) %>%
-      dplyr::mutate(Approval = factor(.data$Approval,
-                                      levels = c("Median", "Approved", "Working")))
+      dplyr::bind_rows(dplyr::select(hist, "Date", "Approval",
+                                     "Value" = "median")) %>%
+      dplyr::mutate(Approval = factor(
+        .data$Approval, levels = c("Median", "Approved", "Working")))
 
     title <- glue_collapse(unique(recent$CalendarYear), ' - ')
     title <- glue::glue("Water Year {title}")
@@ -85,7 +88,7 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
 
     if(nrow(hist) > 0) {
       p <- p +
-        ggplot2::geom_ribbon(data = hist, alpha = 0.35,
+        ggplot2::geom_ribbon(data = hist, alpha = 0.5,
                              ggplot2::aes_string(x = "Date", ymin = "q_low",
                                                  ymax = "q_high", fill = "nice"))
     }
@@ -104,8 +107,9 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
           ggplot2::aes_string(x = "Date", y = "Value", shape = "'Latest Report Date'"),
           fill = "black")
     }
-
     p +
+      ggplot2::scale_colour_manual(
+        values = stats::setNames(plot_values$colour, plot_values$type)) +
       ggplot2::scale_shape_manual(values = 21)
 
   } else {
@@ -116,55 +120,19 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
   }
 }
 
-well_plot_hist <- function(full, hist, date_range, latest_date = NULL,
-                           legend = "right", wrap_year = FALSE) {
+well_plot_hist <- function(full, hist, legend = "right") {
 
-  data <- full %>%
-    dplyr::select("Date", "Approval", "Value") %>%
-    dplyr::filter(.data$Date >= !!date_range[1], .data$Date < !!date_range[2]) %>%
-    tidyr::complete(Date = seq(!!date_range[1], !!date_range[2]-1, "1 day"),
-                    Approval = c("Working", "Approved"),
-                    fill = list(Value = NA)) %>%
-    fasstr::add_date_variables(water_year_start = full$water_year_start[1]) %>%
-    dplyr::left_join(dplyr::select(hist, "DayofYear", "Median" = "median"),
-                     by = "DayofYear") %>%
-    tidyr::pivot_wider(names_from = "Approval", values_from = "Value") %>%
-    tidyr::pivot_longer(cols = c("Approved", "Working", "Median"),
-                        names_to = "Approval", values_to = "Value") %>%
-    dplyr::mutate(Approval = forcats::fct_relevel(.data$Approval, "Median"))
-
-  yr_bin <- unique(data$WaterYear)
-  yr_bin <- yr_bin[c(1, length(yr_bin)/2, length(yr_bin))]
-
-  data <- dplyr::mutate(data, yr_bin = dplyr::if_else(
-    .data$WaterYear <= !!yr_bin[2],
-    glue::glue("Water Year {yr_bin[1]} - {yr_bin[2]}"),
-    glue::glue("Water Year {yr_bin[2]+1} - {yr_bin[3]}")))
-
-  p <- well_plots_base(title = "Historical Record", legend = legend) +
-    ggplot2::geom_line(data = data,
+  well_plots_base(title = "Historical Record", legend = legend) +
+    ggplot2::geom_line(data = full,
                        ggplot2::aes_string(x = "Date", y = "Value",
-                                           colour = "Approval", size = "Approval"),
+                                           colour = "Approval"),
                        na.rm = TRUE) +
-    ggplot2::facet_wrap(~ yr_bin, ncol = 1, scales = "free_x")
-
-  if(!is.null(latest_date) &&
-     nrow(latest_date) > 0 &&
-     latest_date$Date %in% data$Date
-     && latest_date$CurrentYear) {
-    latest_date$yr_bin <- data$yr_bin[nrow(data)]
-    p <- p +
-      ggplot2::geom_point(
-        data = latest_date, size = 4,
-        ggplot2::aes_string(x = "Date", y = "Value",
-                            shape = "'Latest Report Date'")) +
-      ggplot2::guides(shape = ggplot2::guide_legend(
-        override.aes = list(colour = "black",
-                            fill = "black",
-                            shape = 21)))
-  }
-
-  p
+    ggplot2::geom_point(data = full,
+                        ggplot2::aes_string(x = "Date", y = "Value",
+                                            colour = "Approval"),
+                        na.rm = TRUE) +
+    ggplot2::scale_colour_manual(
+      values = stats::setNames(plot_values$colour[1:2], plot_values$type[1:2]))
 }
 
 

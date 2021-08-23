@@ -163,15 +163,7 @@ t %>%
 
 ## Plots
 
-```{r plots, results = "asis", fig.asp = 1.25, fig.width = 10}
-date_range <- w_full %>%
-  filter(CurrentYear) %>%
-  select(WaterYear, water_year_start) %>%
-  distinct() %>%
-  glue_data("{WaterYear}-{water_year_start}-01") %>%
-  ymd()
-date_range <- c(date_range - years(20), date_range)
-
+```{r plots, results = "asis", fig.asp = 0.9, fig.width = 10}
 latest_date <- w_dates %>% 
   group_by(ow) %>% 
   filter(!is.na(Value)) %>%
@@ -185,9 +177,9 @@ for(ow in sort(ows)) {
   date <- filter(latest_date, ow == !!ow)
   
   g1 <- well_plot_perc(full, hist, date, years_min)
-  g2 <- well_plot_hist(full, hist, date_range, date, wrap_year = TRUE)
+  g2 <- well_plot_hist(full, hist)
   
-  g <- g1 / g2 + plot_layout(heights = c(1, 2))
+  g <- g1 / g2
   print(g)
 }
 ```
