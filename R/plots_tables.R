@@ -65,13 +65,18 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
       dplyr::mutate(Approval = factor(.data$Approval,
                                       levels = c("Median", "Approved", "Working")))
 
-    title <- glue::glue("Water Year {glue_collapse(unique(recent$CalendarYear), ' - ')}")
-    range_name <- glue::glue("Historical range of min & max ({hist$start_year[1]} - ",
-                             "{hist$end_year[1]})")
+    title <- glue_collapse(unique(recent$CalendarYear), ' - ')
+    title <- glue::glue("Water Year {title}")
+
+    range_name <- glue::glue("Historical range of min & max ",
+                             "({hist$start_year[1]} - {hist$end_year[1]})")
 
     caption <- NA_character_
     if(nrow(hist) == 0) {
       caption <- "Not enough non-missing data to calculate percentiles"
+    } else if(any(hist$quality_hist == "poor")) {
+      caption <- glue::glue("Percentiles skipped for some dates with ",
+                            "less than {years_min} years of data.")
     }
 
 
