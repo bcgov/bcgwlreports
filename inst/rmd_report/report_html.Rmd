@@ -18,9 +18,11 @@ params:
 
 ```{css, echo=FALSE}
 h2 {
-  border-top: 2px solid;
-  padding-top: 10px;
+  padding-top: 0.2em;
+  padding-left: 0.2em;
   margin-top: 30px;
+  background-color: #337ab7;
+  color: white;
 }
 
 .lightable-classic td {
