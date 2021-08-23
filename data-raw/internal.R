@@ -14,15 +14,23 @@
 
 data_types <- c("wells_sf", "aquifers", "regions")
 
+#scales::show_col(viridis::viridis(n = 7, option = "A"), ncol = 1) # --> No good
+#scales::show_col(viridis::viridis(n = 7, option = "B", end = 0.8), ncol = 1) # Okay
+#scales::show_col(viridis::viridis(n = 7, option = "C"), ncol = 1) # --> No good
+#scales::show_col(viridis::viridis(n = 7, option = "D"), ncol = 1) # Use this one
+
+perc_colours <- viridis::viridis(n = 7, option = "D")
+
 perc_values <- dplyr::tribble(
-  ~class,      ~nice,               ~colour,  ~txt_colour, ~low,    ~high,   ~low_show, ~high_show,
-  "p_max",     "Maximum",           "black",  "white",     0,       0.00001, 1,         1,
-  "p_v_high",  "Much Above Normal", "blue",   "white",     0.00001, 0.10,    0.9,       1,
-  "p_m_high",  "Above Normal",      "cyan",   "black",     0.10,    0.25,    0.75,      0.9,
-  "p_n",       "Normal",            "green",  "black",     0.25,    0.75,    0.25,      0.75,
-  "p_m_low",   "Below Normal",      "yellow", "black",     0.75,    0.9,     0.10,      0.25,
-  "p_v_low",   "Much Below Normal", "red",    "black",     0.9,     0.99999, 0,         0.10,
-  "p_min",     "Minimum",           "orange", "black",     0.99999, 1,       0,         0)
+  ~class,      ~nice,               ~txt_colour, ~low,    ~high,   ~low_show, ~high_show,
+  "p_max",     "Maximum",           "white",     0,       0.00001, 1,         1,
+  "p_v_high",  "Much Above Normal", "white",     0.00001, 0.10,    0.9,       1,
+  "p_m_high",  "Above Normal",      "white",     0.10,    0.25,    0.75,      0.9,
+  "p_n",       "Normal",            "black",     0.25,    0.75,    0.25,      0.75,
+  "p_m_low",   "Below Normal",      "black",     0.75,    0.9,     0.10,      0.25,
+  "p_v_low",   "Much Below Normal", "black",     0.9,     0.99999, 0,         0.10,
+  "p_min",     "Minimum",           "black",     0.99999, 1,       0,         0) %>%
+  dplyr::mutate(colour = !!perc_colours)
 
 plot_values <- dplyr::tribble(~ type,     ~ size, ~ colour,
                               "Working",  0.5,      "red",
