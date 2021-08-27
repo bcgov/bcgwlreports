@@ -323,7 +323,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::select(
       "bg_colour", "txt_colour", "ow",
       "region",
-      "Area" = "area", "Location Name" = "location",
+      "Area" = "area", "Location" = "location",
       "Obs.\nWell" = "ow_link", "Aquifer Type" = "type",
       "Latest\nDate" = "Date", "Latest\nValue" = "Value",
       "Percentile Class" = "percentile",
