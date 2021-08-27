@@ -37,22 +37,25 @@ plot_values <- dplyr::tribble(~ type,     ~ size, ~ colour,
                               "Approved", 0.75,     "black",
                               "Median",   0.5,      "grey50")
 
-type_values <- dplyr::tribble(~code, ~type,
-                              "5a",  "Sedimentary",
-                              "5b",  "Sedimentary",
-                              "4b",  "Confined sand and gravel",
-                              "4c",  "Confined sand and gravel",
-                              "6a",  "Crystalline bedrock",
-                              "6b",  "Crystalline bedrock",
-                              "1a",  "Unconfined sand and gravel",
-                              "1b",  "Unconfined sand and gravel",
-                              "1c",  "Unconfined sand and gravel",
-                              "2",   "Unconfined sand and gravel",
-                              "3",   "Unconfined sand and gravel",
-                              "4a",  "Unconfined sand and gravel")
+type_values <- dplyr::tribble(
+  ~subtype, ~type,                        ~hydraulic_connectivity,
+  "1a",     "Unconfined sand and gravel", "Likely",
+  "1b",     "Unconfined sand and gravel", "Likely",
+  "1c",     "Unconfined sand and gravel", "Likely",
+  "2",      "Unconfined sand and gravel", "Likely",
+  "3",      "Unconfined sand and gravel", "Likely",
+  "4a",     "Unconfined sand and gravel", "Likely",
+  "4b",     "Confined sand and gravel",   "Not Likely",
+  "4c",     "Confined sand and gravel",   "Not Likely",
+  "5a",     "Sedimentary",                "Not Likely",
+  "5b",     "Sedimentary",                "Likely",
+  "6a",     "Crystalline bedrock",        "Not Likely",
+  "6b",     "Crystalline bedrock",        "Not Likely",
+  "UNK",    "Unknown",                    "Unknown"
+)
 
 
-locs <- readr::read_csv("data-raw/obswell_locations.csv") %>%
+region_names <- readr::read_csv("data-raw/obswell_locations.csv") %>%
   dplyr::rename_all(tolower) %>%
   dplyr::rename(ow = well, region = area, area = subarea) %>%
   dplyr::mutate(dplyr::across(dplyr::everything(),
@@ -60,5 +63,5 @@ locs <- readr::read_csv("data-raw/obswell_locations.csv") %>%
                                 stringr::str_trim()))
 
 
-usethis::use_data(data_types, perc_values, plot_values, type_values, locs,
+usethis::use_data(data_types, perc_values, plot_values, type_values, region_names,
                   internal = TRUE, overwrite = TRUE)

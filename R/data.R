@@ -108,8 +108,7 @@ data_aquifers <- function() {
     dplyr::select("aquifer_id", "subtype") %>%
     dplyr::mutate(subtype = stringr::str_extract(.data$subtype,
                                                  "^[1-6]{1}[a-c]{0,1}")) %>%
-    dplyr::left_join(type_values, by = c("subtype" = "code")) %>%
-    dplyr::select(-"subtype") %>%
+    dplyr::left_join(type_values, by = "subtype") %>%
     dplyr::right_join(data_load("wells_sf") %>% sf::st_drop_geometry(),
                       by = "aquifer_id") %>%
     readr::write_rds(data_loc("aquifers"))
