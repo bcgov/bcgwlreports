@@ -129,25 +129,26 @@ well_hist_compare <- function(w_dates, w_hist) {
 well_percentiles <- function(w_comp) {
   w_comp %>%
     well_meta() %>%
-    dplyr::select("ow", "Date", "report_dates", "percentile", "type") %>%
+    dplyr::select("ow", "Date", "report_dates", "percentile", "subtype") %>%
     dplyr::filter(!is.na(.data$percentile)) %>%
-    dplyr::mutate(class = purrr::map_chr(.data$percentile, perc_match, cols = "nice")) %>%
+    dplyr::mutate(class = purrr::map_chr(.data$percentile, perc_match,
+                                         cols = "nice")) %>%
     dplyr::select(-"percentile") %>%
     dplyr::mutate(window = .data$Date != .data$report_dates) %>%
-    dplyr::group_by(.data$report_dates, .data$class, .data$type) %>%
-    dplyr::summarize(n_class_type = dplyr::n(),
+    dplyr::group_by(.data$report_dates, .data$class, .data$subtype) %>%
+    dplyr::summarize(n_class_subtype = dplyr::n(),
                      window = any(.data$window),
                      .groups = "drop") %>%
     tidyr::complete(report_dates = unique(w_comp$report_dates),
-                    type = unique(type_values$type),
-                    class = perc_values$nice, fill = list(n_class_type = 0)) %>%
-    dplyr::group_by(.data$report_dates, .data$type) %>%
-    dplyr::mutate(n_total_type = sum(.data$n_class_type)) %>%
+                    subtype = unique(type_values$subtype),
+                    class = perc_values$nice, fill = list(n_class_subtype = 0)) %>%
+    dplyr::group_by(.data$report_dates, .data$subtype) %>%
+    dplyr::mutate(n_total_subtype = sum(.data$n_class_subtype)) %>%
     dplyr::group_by(.data$report_dates, .data$class) %>%
-    dplyr::mutate(n_total_class = sum(.data$n_class_type)) %>%
+    dplyr::mutate(n_total_class = sum(.data$n_class_subtype)) %>%
     dplyr::ungroup() %>%
     dplyr::group_by(.data$report_dates) %>%
-    dplyr::mutate(n_total_date = sum(.data$n_class_type),
+    dplyr::mutate(n_total_date = sum(.data$n_class_subtype),
            window = any(.data$window, na.rm = TRUE)) %>%
     dplyr::ungroup()
 }
@@ -170,5 +171,5 @@ well_regions <- function(ows) {
   data_load("wells_sf") %>%
     dplyr::filter(.data$ow %in% ows) %>%
     sf::st_drop_geometry() %>%
-    dplyr::left_join(locs, by = "ow")
+    dplyr::left_join(region_names, by = "ow")
 }

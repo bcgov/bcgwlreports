@@ -12,12 +12,43 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-
 bcgwl_style <- function(kable_input, ...) {
   kable_classic(kable_input,
                 lightable_options = "hover", full_width = FALSE,
                 html_font = "\"Arial\", \"Source Sans Pro\", sans-serif",
                 ...)
+}
+
+well_map <- function(details) {
+
+ locs <- data_load("wells_sf") %>%
+   dplyr::right_join(dplyr::select(details, "ow", "bg_colour",
+                                   "Percentile Class"), by = "ow") %>%
+   dplyr::mutate(`Percentile Class` = stringr::str_extract(
+     `Percentile Class`, "^[[:alpha:] ]+ \\([[:digit:]]+\\%\\)"),
+     `Percentile Class` = tidyr::replace_na(`Percentile Class`, "No current data")) %>%
+   sf::st_transform(4326) %>%
+   dplyr::left_join(region_names, by = "ow") %>%
+   dplyr::mutate(tooltip = glue::glue(
+     "<strong>Well</strong>: {.data$ow}<br>",
+     "<strong>Region</strong>: {.data$region}<br>",
+     "<strong>Location</strong>: {.data$location}<br>",
+     "<strong>Current percentile</strong>: {.data$`Percentile Class`}"),
+     tooltip = purrr::map(.data$tooltip, htmltools::HTML))
+
+ regions <- data_load("regions") %>%
+   sf::st_transform(4326)
+
+ leaflet::leaflet(data = locs) %>%
+   leaflet::addProviderTiles("Stamen.Terrain") %>%
+   leaflet::addCircleMarkers(color = "black",
+                             fillColor = ~as.vector(bg_colour), weight = 1,
+                             fillOpacity = 1, radius = 7,
+                             label = ~tooltip) %>%
+   leaflet::addLegend("topright",
+                      colors = perc_values$colour,
+                      labels = perc_values$nice,
+                      values = ~as.vector(bg_colour))
 }
 
 
@@ -52,10 +83,17 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
     dplyr::slice(dplyr::n()) %>%
     dplyr::pull(.data$WaterYear)
 
+  # Get current and previous year
   recent <- dplyr::filter(full, .data$WaterYear == !!year)
 
+  lastyear <- dplyr::filter(full, .data$WaterYear == !!year - 1) %>%
+    # Fake the year to plot on top
+    dplyr::mutate(Date = dplyr::if_else(.data$WaterYear == !!year - 1,
+                                        .data$Date + lubridate::years(1),
+                                        .data$Date))
+
   if(nrow(recent) > 0) {
-    origin <- recent$Date[recent$DayofYear == 1] - lubridate::days(1)
+    origin <- min(recent$Date[recent$DayofYear == 1] - lubridate::days(1))
     hist <- hist %>%
       dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin),
                     Approval = "Median",
@@ -93,10 +131,17 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
                                                  ymax = "q_high", fill = "nice"))
     }
     p <- p +
-      ggplot2::geom_line(data = data,
-                         ggplot2::aes_string(x = "Date", y = "Value",
-                                             colour = "Approval", size = "Approval"),
-                         na.rm = TRUE)
+      ggplot2::geom_line(
+        data = data,
+        ggplot2::aes_string(x = "Date", y = "Value",
+                            colour = "Approval", size = "Approval"),
+        na.rm = TRUE) +
+      ggplot2::geom_line(
+        data = lastyear,
+        ggplot2::aes_string(x = "Date", y = "Value", linetype = "'Previous Year'",
+                            colour = "Approval", size = "Approval"),
+        na.rm = TRUE) +
+      ggplot2::scale_linetype_manual(values = "dotted")
 
     if(!is.null(latest_date) &&
        nrow(latest_date) > 0 &&
@@ -110,7 +155,11 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
     p +
       ggplot2::scale_colour_manual(
         values = stats::setNames(plot_values$colour, plot_values$type)) +
-      ggplot2::scale_shape_manual(values = 21)
+      ggplot2::scale_shape_manual(values = 21) +
+      ggplot2::guides(shape = guide_legend(order = 1),
+                      fill = guide_legend(order = 2),
+                      colour = guide_legend(order = 3),
+                      linetype = guide_legend(order = 4), size = "none")
 
   } else {
     well_plots_base() +
@@ -151,42 +200,54 @@ well_table_overview <- function(w_dates, format = "html") {
     tidyr::pivot_wider(names_from = "report_dates", values_from = "Value")
 }
 
-well_table_below_norm <- function(w_perc, window) {
+well_table_below_norm <- function(w_perc, window, which = "totals") {
 
-  totals <- w_perc %>%
-    dplyr::select(-"type") %>%
-    dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
-    dplyr::group_by(.data$report_dates) %>%
-    dplyr::summarize(t = unique(.data$n_total_date),
-                     n = sum(.data$n_class_type),
-                     p = round(.data$n / .data$t * 100),
-                     p = dplyr::if_else(is.nan(.data$p), 0, .data$p),
-                     .groups = "drop") %>%
-    dplyr::mutate(text = glue::glue("{p}% ({n}/{t})"),
-                  text = dplyr::if_else(.data$t == 0, glue::glue(""), .data$text)) %>%
-    dplyr::select("report_dates", "text") %>%
-    dplyr::arrange(dplyr::desc(.data$report_dates)) %>%
-    dplyr::mutate(type = "Across all types")
+  if(which == "totals") {
+    r <- w_perc %>%
+      dplyr::select(-"subtype") %>%
+      dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
+      dplyr::group_by(.data$report_dates) %>%
+      dplyr::summarize(t = unique(.data$n_total_date),
+                       n = sum(.data$n_class_subtype),
+                       p = round(.data$n / .data$t * 100),
+                       p = dplyr::if_else(is.nan(.data$p), 0, .data$p),
+                       .groups = "drop") %>%
+      dplyr::mutate(text = glue::glue("{p}% ({n}/{t})"),
+                    text = dplyr::if_else(.data$t == 0, glue::glue(""), .data$text)) %>%
+      dplyr::select("report_dates", "text") %>%
+      dplyr::arrange(dplyr::desc(.data$report_dates))
+  } else {
+    r <- w_perc %>%
+      dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
+      dplyr::left_join(type_values, by = "subtype") %>%
+      dplyr::group_by(.data$report_dates, .data[[which]], .data$subtype) %>%
+      dplyr::summarize(t = unique(.data$n_total_subtype),
+                       n = sum(.data$n_class_subtype), .groups = "drop_last") %>%
+      dplyr::summarize(t = sum(.data$t),
+                       n = sum(.data$n),
+                       p = round(.data$n / .data$t * 100),
+                       p = dplyr::if_else(is.nan(.data$p), 0, .data$p),
+                       .groups = "drop") %>%
+      dplyr::mutate(text = glue::glue("{p}% ({n}/{t})"),
+                    text = dplyr::if_else(t == 0, glue::glue(""), .data$text)) %>%
+      dplyr::select("report_dates", !!which, "text")
+  }
 
-  w_perc %>%
-    dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
-    dplyr::group_by(.data$report_dates, .data$type) %>%
-    dplyr::summarize(t = unique(.data$n_total_type), n = sum(.data$n_class_type),
-                     p = round(.data$n / .data$t * 100),
-                     p = dplyr::if_else(is.nan(.data$p), 0, .data$p),
-                     .groups = "drop") %>%
-    dplyr::mutate(text = glue::glue("{p}% ({n}/{t})"),
-                  text = dplyr::if_else(t == 0, glue::glue(""), .data$text)) %>%
-    dplyr::select("report_dates", "type", "text") %>%
+  r <- r %>%
     dplyr::arrange(dplyr::desc(.data$report_dates)) %>%
-    dplyr::bind_rows(totals) %>%
     dplyr::mutate(report_dates = dplyr::if_else(
       .data$report_dates %in% !!window,
       as.character(glue::glue("{.data$report_dates}*")),
       as.character(.data$report_dates))) %>%
-    tidyr::pivot_wider(names_from = "report_dates", values_from = "text") %>%
-    dplyr::select("type", dplyr::everything()) %>%
-    dplyr::rename("Aquifer Type" = "type")
+    tidyr::pivot_wider(names_from = "report_dates", values_from = "text")
+
+  if(which == "type") {
+    r <- dplyr::select(r, "Aquifer Type" = "type", dplyr::everything())
+  } else if(which == "hydraulic_connectivity") {
+    r <- dplyr::select(r, "Hydraulic connectivity" = "hydraulic_connectivity",
+                       dplyr::everything())
+  }
+  r
 }
 
 well_table_status <- function(w_perc, perc_values, window) {
@@ -233,7 +294,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::filter(.data$Date == .data$keep) %>%
     dplyr::left_join(last_year, by = c("ow", "report_dates")) %>%
     dplyr::mutate(
-      ow = ow_link(.data$ow, format = format),
+      ow_link = ow_link(.data$ow, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
       Value = as.character(round(.data$Value, 2)),
       Value = dplyr::if_else(.data$Approval == "Working" & !is.na(.data$Value),
@@ -257,15 +318,16 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       bg_colour = tidyr::replace_na(.data$bg_colour, "white"),
       txt_colour = rlang::set_names(!!perc_values$txt_colour, !!perc_values$nice)[.data$class],
       txt_colour = tidyr::replace_na(.data$txt_colour, "black"),
-      percentile = glue::glue("{percentile}<br><small>(n = {n_years})</small>")) %>%
+      percentile = glue::glue("{percentile}<br><small>(n = {n_years})</small>"),
+      percentile = dplyr::if_else(is.na(Value), glue::glue(""), percentile)) %>%
     dplyr::select(
-      "bg_colour", "txt_colour",
+      "bg_colour", "txt_colour", "ow",
       "region",
       "Area" = "area", "Location Name" = "location",
-      "Obs.\nWell" = "ow", "Aquifer Type" = "type",
+      "Obs.\nWell" = "ow_link", "Aquifer Type" = "type",
       "Latest\nDate" = "Date", "Latest\nValue" = "Value",
       "Percentile Class" = "percentile",
-      "Last Year's\nValue" = "value_last_year")
+      "Previous Year's\nValue" = "value_last_year")
 }
 
 appendix_dates <- function(w_dates, format = "html") {
