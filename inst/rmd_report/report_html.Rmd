@@ -159,7 +159,7 @@ tbl
 
 
 ```{r wells_below_normal_type}
-t <- well_table_below_norm(w_perc, window, which = "type")
+t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
 
 foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date/category" 
 if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
@@ -182,7 +182,7 @@ t %>%
 **Wells below normal by aquifer type**
 
 ```{r wells_below_normal_connectivity}
-t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
+t <- well_table_below_norm(w_perc, window, which = "type")
 
 foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date/category" 
 if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
@@ -208,7 +208,7 @@ index <- table(details$region)
 details <- select(details, -"bg_colour", -"txt_colour", -"ow", -"region")
 ```
 
-**Latest details on observation wells in `r year(t[["Latest\nDate"]][1])`**
+**Latest details on observation wells in `r year(details[["Latest\nDate"]][1])`**
 
 ```{r well_summaries}
 details %>%
