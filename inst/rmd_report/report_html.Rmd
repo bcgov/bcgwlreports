@@ -259,9 +259,12 @@ for(ow in sort(ows)) {
 
 ### A - Dates
 
-If data isn't available for an exact reporting date, a date with data 
-within a `r within * 2 + 1` day window around the reporting date is chosen instead.
-If there are multiple dates with data, the dates are ranked based on their historical data 
+If data isn't available for an exact reporting date, dates up to `r n_days` days
+before and `r n_days` days after the report date are examined for non-missing data. 
+Thus, an alternative date is chosen within a 
+`r n_days * 2 + 1`-day window, centred on the reporting date.
+
+If there are multiple dates with data, the dates are ranked based on their historical data
 quality (for calculating percentiles) and their nearness to the original date indicated.
 The top date is then chosen for that well and that reporting date. 
 
@@ -272,14 +275,20 @@ observation well.
 a <- appendix_dates(w_dates)
 index <- table(a$region)
 
-a %>%
+tbl_a <- a %>%
   select(- "region") %>%
-  kable(format = "html", digits = 2, escape = FALSE,
-        caption = "Table A1") %>%
-  bcgwl_style() %>%
-  kableExtra::footnote(general = note_no_data) %>%
-  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4)) %>%
-  pack_rows(index = index)
+  kable(format = "html", align = "llccccc", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = "hover", full_width = FALSE, 
+    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
+  row_spec(0, bold = TRUE) %>%
+  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4), 
+                   bold = TRUE)
+
+if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = note_no_data)
+
+tbl_a
+
 ```
 
 
