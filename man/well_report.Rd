@@ -6,8 +6,10 @@
 \usage{
 well_report(
   ows,
-  report_dates = Sys.Date(),
-  within = 7,
+  report_dates = c(Sys.Date() - lubridate::weeks(2), Sys.Date() - lubridate::weeks(4)),
+  title = NULL,
+  description = NULL,
+  n_days = 14,
   years_min = 5,
   out_dir = ".",
   cache_age = 7
@@ -16,14 +18,19 @@ well_report(
 \arguments{
 \item{ows}{Character vector. Observation well numbers (e.g, "OW000")}
 
-\item{report_dates}{Character vector. Two current dates to explore}
+\item{report_dates}{Character vector. Two current dates to explore. By
+default a date 2 week ago and 4 weeks before that are used.}
 
-\item{within}{Numeric. Number of days within which to get alternative dates}
+\item{n_days}{Numeric. If there is no data on the report date chosen, this is
+the range of days over which to look for alternative dates with data.
+Defaults to 2 weeks, meaning 2 weeks before and 2 weeks after a given
+report date, for a total window of 4 weeks.}
 
 \item{years_min}{Numeric. Minimum number of years required to to calculate a
 percentiles}
 
-\item{out_dir}{Character. Location of output report. Defaults to working directory.}
+\item{out_dir}{Character. Location of output report. Defaults to working
+directory.}
 
 \item{cache_age}{Logical. Maxmum age in days of cached datasets (not obs well
 data, but metadata related to regional maps, aquifer and wells).}
@@ -35,8 +42,7 @@ Compile report
 
 \dontrun{
 
-well_report(ows = c("OW008", "OW217", "OW377", "OW197"),
-            report_dates = c(Sys.Date(), Sys.Date() - lubridate::weeks(2)))
+well_report(ows = c("OW008", "OW217", "OW377", "OW197"))
 
 }
 

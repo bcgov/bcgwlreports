@@ -12,18 +12,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-dates_check <- function(report_dates) {
-
-  report_dates <- suppressWarnings(lubridate::as_date(report_dates))
-  if(any(is.na(report_dates))) {
-    stop("report_dates must be valid dates YYYY-MM-DD", call. = FALSE)
-  } else if (any(report_dates > Sys.Date())) {
-    stop("Cannot calculate reports for future dates", call. = FALSE)
-  }
-
-  sort(c(report_dates, report_dates - lubridate::years(1)), decreasing = TRUE)
-}
-
 
 well_prep <- function(ows, water_year_start, report_dates) {
   w <- ow_update(ows) %>%
@@ -92,12 +80,12 @@ well_hist <- function(w_full, years_min) {
       p = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$p))
 }
 
-well_dates <- function(w_full, w_hist, report_dates, within) {
+well_dates <- function(w_full, w_hist, report_dates, n_days) {
 
   r <- dplyr::tibble(report_dates = report_dates) %>%
     dplyr::mutate(Date = purrr::map(.data$report_dates,
-                                    ~seq(. - lubridate::days(!!within),
-                                         . + lubridate::days(!!within),
+                                    ~seq(. - lubridate::days(!!n_days),
+                                         . + lubridate::days(!!n_days),
                                          by = "1 day"))) %>%
     tidyr::unnest(.data$Date)
 

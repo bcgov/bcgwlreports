@@ -29,7 +29,7 @@ params:
   w_perc: ""
   w_dates: ""
   report_dates: ""
-  within: ""
+  n_days: ""
   years_min: ""
 ---
 
@@ -49,7 +49,7 @@ w_hist <- params$w_hist
 w_comp <- params$w_comp
 w_perc <- params$w_perc
 w_dates <- params$w_dates
-within <- params$within
+n_days <- params$n_days
 report_dates <- params$report_dates
 ows <- unique(w_full$ow)
 years_min <- params$years_min
@@ -71,7 +71,7 @@ well_table_overview(w_dates) %>%
                        "Values are depth below ground (m) for a given well/date.\\\\",
                        "Blank cells indicate no data.\\\\",
                        "** indicates a value not on the exact reporting date but within ",
-                       "a {within*2 + 1}-day window around the reporting date.")) %>%
+                       "a {n_days*2 + 1}-day window around the reporting date.")) %>%
   kable_styling(latex_options = c("hold_position", "repeat_header"))
 ```
 
@@ -89,7 +89,7 @@ t %>%
                        "date/category.\\\\",
                        "Blank cells indicate no wells with data\\\\",
                        "** indicates reporting dates which include values within ",
-                       "a {within*2 + 1}-day window around it")) %>%
+                       "a {n_days*2 + 1}-day window around it")) %>%
   kable_styling(latex_options = "hold_position") %>%
   row_spec(str_which(t$`Aquifer Type`, "Across all types"), hline_after = TRUE)
 ```
@@ -105,7 +105,7 @@ t %>%
         caption = glue("\\textbf{{Number of wells in each percentile class ",
                        "by date}}\\\\",
                        "** indicates reporting dates which include values within ",
-                       "a {within*2 + 1}-day window around it")) %>%
+                       "a {n_days*2 + 1}-day window around it")) %>%
   kable_styling(latex_options = "hold_position") %>%
   column_spec(1, background = c("white", t$colour)) %>%
   row_spec(str_which(t$class, "Across"), hline_after = TRUE)
@@ -186,9 +186,12 @@ for(ow in sort(ows)) {
 
 ## Appendix A - Dates
 
-If data isn't available for an exact reporting date, a date with data 
-within a `r within * 2 + 1` day window around the reporting date is chosen instead.
-If there are multiple dates with data, the dates are ranked based on their historical data 
+If data isn't available for an exact reporting date, dates up to `r n_days` 
+before and `r n_days` after the report date are examined for non-missing data. 
+Thus, an alternative date is chosen within a 
+`r n_days * 2 + 1` day window, centred on the reporting date.
+
+If there are multiple dates with data, the dates are ranked based on their historical data
 quality (for calculating percentiles) and their nearness to the original date indicated.
 The top date is then chosen for that well and that reporting date. 
 
@@ -201,7 +204,7 @@ appendix_dates(w_dates) %>%
           escape = FALSE,
           caption = glue("\\textbf{{Exact reporting dates}}\\\\",
                          "Blank cells indicate no data (i.e. no date with ",
-                         "non-missing values within a {within*2 + 1}-day window ",
+                         "non-missing values within a {n_days*2 + 1}-day window ",
                          "around the reporting date).\\\\")) %>%
     kable_styling(latex_options = c("hold_position", "repeat_header")) %>%
     add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4))
@@ -241,8 +244,8 @@ appendix_dates(w_dates) %>%
 ### Parameters
 
 - **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
-- **Days in Window** (`within`): `r within`
-  - Total window around (and including) a date is **`r within * 2 + 1` days**
+- **Days in Window** (`n_days`): `r n_days`
+  - Total window around (and including) a date is **`r n_days * 2 + 1` days**
 - **Percentile Calculations**
   - **Min number of years** (`years_min`) - `r years_min`
   - **Max no. years** (`years_max`) - `r years_max`

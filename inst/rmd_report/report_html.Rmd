@@ -1,19 +1,21 @@
 ---
-title: "Observation Wells Groundwater Levels"
 date: "`r Sys.Date()`"
 output: 
   html_document:
     toc: true
     toc_float: true
 params: 
+  title: NULL
+  description: NULL
   w_full: ""
   w_hist: ""
   w_comp: ""
   w_perc: ""
   w_dates: ""
   report_dates: ""
-  within: ""
+  n_days: ""
   years_min: ""
+title: "`r if(!is.null(params$title)) params$title else 'Observation Wells Groundwater Levels'`"
 ---
 
 ```{css, echo=FALSE}
@@ -73,7 +75,7 @@ w_hist <- params$w_hist
 w_comp <- params$w_comp
 w_perc <- params$w_perc
 w_dates <- params$w_dates
-within <- params$within
+n_days <- params$n_days
 report_dates <- params$report_dates
 years_min <- params$years_min
 
@@ -84,10 +86,18 @@ window <- w_perc %>%
   pull(report_dates) %>%
   unique()
 
-note_value <- glue("value within a {within*2 + 1}-day window centred on the reporting date")
-note_values <- glue("includes values from a {within*2 + 1}-day window centred on the reporting date")
+note_value <- glue("reporting date was missing data, this value came from an alternative date within a {n_days*2 + 1}-day window centred on the reporting date")
+note_values <- glue("not all reporting dates had data, these include values obtained from a {n_days*2 + 1}-day window centred on the reporting date")
 note_no_data <- "Blank cells indicate no data"
 ```
+
+```{r description, results = "asis"}
+if(!is.null(params$description) && params$description != "") {
+  cat("## Description\n\n")
+  cat(params$description)
+}
+```
+
 
 ## Map
 
@@ -298,8 +308,8 @@ a %>%
 #### Parameters
 
 - **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
-- **Days in Window** (`within`): `r within`
-  - Total window around (and including) a date is **`r within * 2 + 1` days**
+- **No. Days on either side of report date in which search for alternate date** (`n_days`): `r n_days`
+  - Total window around (and including) a reporting date is **`r n_days * 2 + 1` days**
 - **Percentile Calculations**
   - **Min number of years** (`years_min`) - `r years_min`
   
