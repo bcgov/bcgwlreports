@@ -203,35 +203,46 @@ t %>%
   kableExtra::footnote(general = foot)
 ```
 
-## Latest date details
+## Latest details
 
 ```{r well_summaries_prep}
 bg_colour <- details$bg_colour
 txt_colour <- details$txt_colour
 index <- table(details$region)
 
+c_scale <- viridis::inferno(n = 2, begin = 0.3, end = 0.7)
+value_colour <- case_when(as.numeric(details$`Recent\nChange`) < 0 ~ c_scale[1],
+                          details$`Recent\nChange` > 0 ~ c_scale[2],
+                          TRUE ~ "white")
+value_txt_colour <- if_else(value_colour == c_scale[1], "white", "black")
+
 details <- select(details, -"bg_colour", -"txt_colour", -"ow", -"region")
+
+foot <- c("Values are in meters below ground",
+          glue("n is the number of years included in ",
+               "the percentile calculation."),
+          "* indicates Values with an Approval Status of ‘Working’",
+          glue("Recent change compares latest value to the other report date ",
+               "value for this year ({format(report_dates[2], '%b %d\n%Y')})"))
+if(any(details == "" | is.na(details))) foot <- c(foot, note_no_data)
 ```
 
 **Latest details on observation wells in `r year(details[["Latest\nDate"]][1])`**
 
 ```{r well_summaries}
 details %>%
-  kable(format = "html", escape = FALSE, align = "llllcccc") %>%
+  kable(format = "html", escape = FALSE, align = "llcllccccc") %>%
   kable_styling(
     fixed_thead = TRUE,
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  footnote(general = 
-             c(glue("Includes comparison of latest water depth value ",
-                    "compared to last year's value"),
-               "Values/Medians are in meters below ground",
-               glue("n is the number of years included in ",
-                    "the percentile calculation."),
-               "* indicates Values with an Approval Status of ‘Working’")) %>%
-  column_spec(str_which(names(details), "Percentile Class"), 
+  footnote(general = foot) %>%
+  column_spec(str_which(names(details), "Percentile"), 
               background = bg_colour, color = txt_colour) %>%
-  pack_rows(index = index, label_row_css = "border-bottom: 1px solid #ddd")
+  column_spec(str_which(names(details), "Recent\nChange"),
+              background = value_colour, color = value_txt_colour) %>%
+  pack_rows(index = index, label_row_css = "border-bottom: 1px solid #ddd",
+            indent = FALSE)
 
 ```
   
