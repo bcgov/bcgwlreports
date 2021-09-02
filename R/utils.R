@@ -24,8 +24,17 @@ ow_c <- function(ows) {
 }
 
 ow_link <- function(ow, format) {
-  if(format == "pdf") ow <- glue::glue("\\hyperref[{tolower(ow)}]{{{ow}}}")
-  if(format == "html") ow <- glue::glue("<a href = '#{tolower(ow)}'>{ow}</a>")
+  ow_ref <- stringr::str_extract(ow, "OW[0-9]{3}") %>%
+    tolower()
+  if(format == "pdf") ow <- glue::glue("\\hyperref[{ow_ref}]{{{ow}}}")
+  if(format == "html") ow <- glue::glue("<a href = '#{ow_ref}'>{ow}</a>")
+}
+
+ow_fish <- function(ow) {
+  well_meta(ow) %>%
+    dplyr::mutate(ow = if_else(.data$hydraulic_connectivity == "Likely",
+                               as.character(glue("{.data$ow}  🐟")), .data$ow)) %>%
+    dplyr::pull(ow)
 }
 
 find_continuous <- function(w) {

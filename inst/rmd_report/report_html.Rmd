@@ -99,6 +99,10 @@ if(!is.null(params$description) && params$description != "") {
 ```
 
 
+**Notes:**
+
+🐟 = Likely hydraulically connected
+
 ## Map
 
 ```{r wells_map}

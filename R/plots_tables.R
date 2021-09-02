@@ -19,21 +19,22 @@ bcgwl_style <- function(kable_input, ...) {
                 ...)
 }
 
-well_map <- function(details) {
+well_map <- function(details, format = "html") {
 
  locs <- data_load("wells_sf") %>%
    dplyr::right_join(dplyr::select(details, "ow", "bg_colour",
-                                   "Percentile Class"), by = "ow") %>%
-   dplyr::mutate(`Percentile Class` = stringr::str_extract(
-     `Percentile Class`, "^[[:alpha:] ]+ \\([[:digit:]]+\\%\\)"),
-     `Percentile Class` = tidyr::replace_na(`Percentile Class`, "No current data")) %>%
+                                   "Percentile"), by = "ow") %>%
+   dplyr::mutate(
+     Percentile = stringr::str_extract(.data$Percentile,
+                                       "^[[:alpha:] ]+ \\([[:digit:]]+\\%\\)"),
+     Percentile = tidyr::replace_na(.data$Percentile, "No current data")) %>%
    sf::st_transform(4326) %>%
    dplyr::left_join(region_names, by = "ow") %>%
    dplyr::mutate(tooltip = glue::glue(
-     "<strong>Well</strong>: {.data$ow}<br>",
+     "<strong>Well</strong>: {ow_link(ow_fish(.data$ow), format = format)}<br>",
      "<strong>Region</strong>: {.data$region}<br>",
      "<strong>Location</strong>: {.data$location}<br>",
-     "<strong>Current percentile</strong>: {.data$`Percentile Class`}"),
+     "<strong>Current percentile</strong>: {.data$Percentile}"),
      tooltip = purrr::map(.data$tooltip, htmltools::HTML))
 
  regions <- data_load("regions") %>%
@@ -44,7 +45,11 @@ well_map <- function(details) {
    leaflet::addCircleMarkers(color = "black",
                              fillColor = ~as.vector(bg_colour), weight = 1,
                              fillOpacity = 1, radius = 7,
-                             label = ~tooltip) %>%
+                             popup = ~tooltip, label = ~ow,
+                             labelOptions = leaflet::labelOptions(
+                               noHide = TRUE, textOnly = TRUE, direction = "top",
+                               style = list("font-weight" = "bold",
+                                            "font-size" = "12px"))) %>%
    leaflet::addLegend("topright",
                       colors = perc_values$colour,
                       labels = perc_values$nice,
@@ -294,7 +299,8 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::filter(.data$Date == .data$keep) %>%
     dplyr::left_join(last_year, by = c("ow", "report_dates")) %>%
     dplyr::mutate(
-      ow_link = ow_link(.data$ow, format = format),
+      ow_link = ow_fish(.data$ow),
+      ow_link = ow_link(.data$ow_link, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
       Value = as.character(round(.data$Value, 2)),
       Value = dplyr::if_else(.data$Approval == "Working" & !is.na(.data$Value),
