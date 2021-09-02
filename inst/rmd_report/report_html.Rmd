@@ -28,6 +28,10 @@ h2 {
   color: white;
 }
 
+h3 {
+  margin-top: 35px;
+}
+
 body {
   font-size: 12pt
 }
@@ -99,11 +103,12 @@ if(!is.null(params$description) && params$description != "") {
 ```
 
 
+## Map
+
 **Notes:**
 
 🐟 = Likely hydraulically connected
 
-## Map
 
 ```{r wells_map}
 details <- well_table_summary(w_dates, w_hist, perc_values)
@@ -115,14 +120,14 @@ well_map(details)
 
 ### Overall
 
-The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date
+The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date.
 
 ```{r wells_below_normal_overall}
 t <- well_table_below_norm(w_perc, window, which = "totals")
   
-foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
-if(any(t == "" | is.na(t))) foot <- c(foot, note_no_data)
+foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date" 
+if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
+if(any(t == "" | is.na(t))) foot <- c(foot, glue("&bull; {note_no_data}"))
 
 t %>%
   kable(format = "html", align = "cccc") %>%
@@ -131,12 +136,12 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c("Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot)
+  kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
 ### Groundwater Level Status
 
-**Number of wells in each percentile class by date**
+**Number of wells in each water level percentile class by date**
 
 ```{r percentile_class}
 t <- well_table_status(w_perc, perc_values, window) %>%
@@ -154,7 +159,8 @@ tbl <- t %>%
   add_header_above(c("", "Current Year" = 2, "Last Year" = 2), bold = TRUE)
 
 if(any(str_detect(names(t), "\\*"))) {
-  tbl <- footnote(tbl, general = glue("* {note_values}"))
+  tbl <- footnote(tbl, general = glue("&bull; * {note_values}"), 
+                  escape = FALSE)
 }
 
 tbl
@@ -164,13 +170,14 @@ tbl
 
 **Wells below normal by hydraulic connectivity**
 
+The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date by hydraulic connectivity.
 
 ```{r wells_below_normal_type}
 t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
 
-foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date/category" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
-if(any(t == "")) foot <- c(foot, note_no_data)
+foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date/category" 
+if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
+if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
 
 t %>%
   kable(format = "html", align = "lcccc") %>%
@@ -179,7 +186,7 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot)
+  kableExtra::footnote(general = foot, escape = FALSE)
 
 ```
 
@@ -188,12 +195,14 @@ t %>%
 
 **Wells below normal by aquifer type**
 
+The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date by aquifer type.
+
 ```{r wells_below_normal_connectivity}
 t <- well_table_below_norm(w_perc, window, which = "type")
 
-foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date/category" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
-if(any(t == "")) foot <- c(foot, note_no_data)
+foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date/category" 
+if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
+if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
 
 t %>%
   kable(format = "html", align = "lcccc") %>%
@@ -202,7 +211,7 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot)
+  kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
 ## Latest details
@@ -220,12 +229,18 @@ value_txt_colour <- if_else(value_colour == c_scale[1], "white", "black")
 
 details <- select(details, -"bg_colour", -"txt_colour", -"ow", -"region")
 
-foot <- c("Values are in meters below ground",
-          glue("n is the number of years included in ",
+foot <- c("&bull; Values are in meters below ground",
+          glue("&bull; n is the number of years included in ",
                "the percentile calculation."),
-          "* indicates Values with an Approval Status of ‘Working’",
-          glue("Recent change compares latest value to the other report date ",
-               "value for this year ({format(report_dates[2], '%b %d\n%Y')})"))
+          "&bull; * indicates Values with an Approval Status of ‘Working’",
+          glue("&bull; Recent change compares latest value to the other report date ",
+               "value for this year ({report_dates[2]}); ",
+               "<span style = 'background-color:{c_scale[1]}; color: white'>",
+               "Purple</span> indicates an increase in water level ",
+               "(decrease in depth below ground), ",
+               "whereas <span style = 'background-color:{c_scale[2]}'>",
+               "Orange</span> indicates an decrease in water level ",
+               "(increase in depth below ground)."))
 if(any(details == "" | is.na(details))) foot <- c(foot, note_no_data)
 ```
 
@@ -238,7 +253,7 @@ details %>%
     fixed_thead = TRUE,
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  footnote(general = foot) %>%
+  footnote(general = foot, escape = FALSE) %>%
   column_spec(str_which(names(details), "Percentile"), 
               background = bg_colour, color = txt_colour) %>%
   column_spec(str_which(names(details), "Recent\nChange"),
@@ -317,7 +332,7 @@ tbl_a <- a %>%
   add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4), 
                    bold = TRUE)
 
-if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = note_no_data)
+if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("&bull; {note_no_data}"), escape = FALSE)
 
 tbl_a
 

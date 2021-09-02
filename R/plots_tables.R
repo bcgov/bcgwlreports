@@ -50,7 +50,7 @@ well_map <- function(details, format = "html") {
                                noHide = TRUE, textOnly = TRUE, direction = "top",
                                style = list("font-weight" = "bold",
                                             "font-size" = "12px"))) %>%
-   leaflet::addLegend("topright",
+   leaflet::addLegend("topright", title = "Water Levels",
                       colors = perc_values$colour,
                       labels = perc_values$nice,
                       values = ~as.vector(bg_colour))
@@ -274,7 +274,12 @@ well_table_status <- function(w_perc, perc_values, window) {
                                    as.character(.data$report_dates))) %>%
     tidyr::pivot_wider(names_from = "report_dates", values_from = "n") %>%
     dplyr::arrange(.data$class) %>%
-    dplyr::select("class", dplyr::everything())
+    dplyr::left_join(select(perc_values, nice, low_show, high_show), by = c("class" = "nice")) %>%
+    dplyr::mutate(class = dplyr::if_else(
+      !stringr::str_detect(class, "Max|Min|Across"),
+      as.character(glue::glue("{class} ({low_show*100}% - {high_show*100}%)")),
+      class)) %>%
+    dplyr::select("class", dplyr::everything(), -"low_show", -"high_show")
 }
 
 well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
