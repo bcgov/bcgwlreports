@@ -79,7 +79,7 @@ check_numeric <- function(x, type, lower) {
   }
 }
 
-check_dates <- function(report_dates) {
+check_dates <- function(report_dates, n_days) {
 
   report_dates <- suppressWarnings(lubridate::as_date(report_dates))
   if(any(is.na(report_dates))) {
@@ -88,6 +88,10 @@ check_dates <- function(report_dates) {
     stop("Cannot calculate reports for future dates", call. = FALSE)
   } else if (length(report_dates) != 2) {
     stop("Can only use two current dates (for now)", call. = FALSE)
+  } else if(min(report_dates) + lubridate::days(n_days) >= max(report_dates)){
+    stop("Range over which to look for data ('n_days') cannot overlap both ",
+         "report dates.\nEither make 'n_days' smaller or select two report dates ",
+         "farther apart.", call. = FALSE)
   }
 
   sort(c(report_dates, report_dates - lubridate::years(1)), decreasing = TRUE)

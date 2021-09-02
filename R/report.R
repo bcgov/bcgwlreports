@@ -42,7 +42,7 @@ well_report <- function(ows,
                         report_dates = c(Sys.Date() - lubridate::weeks(2),
                                          Sys.Date() - lubridate::weeks(4)),
                         title = NULL,
-                        description = NULL, n_days = 14,
+                        description = NULL, n_days = 13,
                         years_min = 5, out_dir = ".", cache_age = 7) {
 
 
@@ -53,7 +53,7 @@ well_report <- function(ows,
 
   check_title(title)
   description <- check_description(description)
-  report_dates <- check_dates(report_dates)
+  report_dates <- check_dates(report_dates, n_days)
 
   # Update the local data if cache out of date
   data_update(cache_age)
