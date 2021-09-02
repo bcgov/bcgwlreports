@@ -256,8 +256,22 @@ latest_date <- w_dates %>%
   filter(Date == max(Date)) %>%
   filter(CurrentYear) #Keep only ones that are in Table 4?
 
+w_meta <- w_dates %>%
+  well_meta()
 for(ow in sort(ows)) {
-  cat(glue("\n\n\n### {ow}\n\n\n"))
+  w_meta %>%
+    filter(.data$ow %in% !!ow) %>%
+    select("ow", "region", "location", "type", "hydraulic_connectivity") %>%
+    distinct() %>%
+    mutate(ow = ow_fish(ow)) %>%
+    glue_data("\n\n\n### {ow}\n\n",
+              "[Map](#map)<br>",
+              "<strong>Region:</strong> {region}<br>\n",
+              "<strong>Location:</strong> {location}<br>\n",
+              "<strong>Aquifer type:</strong> {type}<br>\n",
+              "<strong>Hydraulic_connectivity:</strong> ",
+              "{hydraulic_connectivity}<p>\n\n") %>%
+    cat()
   full <- filter(w_full, ow == !!ow)
   hist <- filter(w_hist, ow == !!ow)
   date <- filter(latest_date, ow == !!ow)
