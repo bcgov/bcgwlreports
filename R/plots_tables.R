@@ -293,30 +293,26 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::arrange(.data$ow, dplyr::desc(.data$Date)) %>%
     dplyr::group_by(.data$ow) %>%
     dplyr::filter(.data$CurrentYear) %>%
-    dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
+    dplyr::mutate(recent_diff = Value[1] - Value[2],
+                  keep = dplyr::if_else(all(is.na(.data$Value)),
                                         .data$Date[1],
                                         .data$Date[!is.na(.data$Value)][1])) %>%
     dplyr::filter(.data$Date == .data$keep) %>%
     dplyr::left_join(last_year, by = c("ow", "report_dates")) %>%
+    dplyr::mutate(dplyr::across(
+      .cols = c("Value", "value_last_year", "recent_diff"),
+      ~if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
     dplyr::mutate(
       ow_link = ow_fish(.data$ow),
       ow_link = ow_link(.data$ow_link, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
-      Value = as.character(round(.data$Value, 2)),
       Value = dplyr::if_else(.data$Approval == "Working" & !is.na(.data$Value),
                              as.character(glue::glue("{Value}*")),
-                             .data$Value),
-      value_last_year = round(.data$value_last_year, 2),
-      class = tidyr::replace_na(.data$class, ""),
-      percentile = dplyr::if_else(
-        is.na(.data$percentile),
-        glue::glue(""),
-        glue::glue(" ({round((1 - percentile) * 100)}{percent})")),
-      percentile = glue::glue("{class}{percentile}"),
-      n_years = dplyr::case_when(
-        .data$percentile == "" ~ glue::glue(""),
-        TRUE ~ glue::glue(.data$n_years)),
-      median = round(.data$median, 2)) %>%
+                             as.character(.data$Value)),
+      percentile = glue::glue("{class} ",
+                              "({round((1 - percentile) * 100)}{percent})<br>",
+                              "<small>(n = {n_years})</small>"),
+      percentile = dplyr::if_else(is.na(Value), NA_character_, as.character(percentile))) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$region, .data$area, .data$location, .data$ow) %>%
     dplyr::mutate(
@@ -324,16 +320,15 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       bg_colour = tidyr::replace_na(.data$bg_colour, "white"),
       txt_colour = rlang::set_names(!!perc_values$txt_colour, !!perc_values$nice)[.data$class],
       txt_colour = tidyr::replace_na(.data$txt_colour, "black"),
-      percentile = glue::glue("{percentile}<br><small>(n = {n_years})</small>"),
-      percentile = dplyr::if_else(is.na(Value), glue::glue(""), percentile)) %>%
+      ) %>%
     dplyr::select(
       "bg_colour", "txt_colour", "ow",
       "region",
-      "Area" = "area", "Location" = "location",
-      "Obs.\nWell" = "ow_link", "Aquifer Type" = "type",
-      "Latest\nDate" = "Date", "Latest\nValue" = "Value",
-      "Percentile Class" = "percentile",
-      "Previous Year's\nValue" = "value_last_year")
+      "Area" = "area", "Location" = "location", "Obs.\nWell" = "ow_link",
+      "Hydraulic\nConnection" = "hydraulic_connectivity", "Aquifer Type" = "type",
+      "Latest\nDate" = "Date", "Percentile" = "percentile",
+      "Latest\nValue" = "Value", "Previous Year's\nValue" = "value_last_year",
+      "Recent\nChange" = "recent_diff")
 }
 
 appendix_dates <- function(w_dates, format = "html") {

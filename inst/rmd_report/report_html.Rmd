@@ -148,6 +148,7 @@ tbl <- t %>%
   column_spec(1, background = c(perc_values$colour, "white"),
               color = c(perc_values$txt_colour, "black")) %>%
   row_spec(0, bold = TRUE) %>%
+  row_spec(nrow(t), extra_css = "border-top: 1px solid #ddd") %>%
   add_header_above(c("", "Current Year" = 2, "Last Year" = 2), bold = TRUE)
 
 if(any(str_detect(names(t), "\\*"))) {

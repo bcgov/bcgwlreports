@@ -99,12 +99,12 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
     dplyr::arrange(dplyr::desc(.data$quality_hist),
                    abs(.data$Date - .data$report_dates),
                    .by_group = TRUE) %>%
-    dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
-                                        .data$Date[1],
-                                        .data$Date[!is.na(.data$Value)][1])) %>%
-    dplyr::filter(.data$Date == .data$keep) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-"keep")
+   dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
+                                       .data$Date[1],
+                                       .data$Date[!is.na(.data$Value)][1])) %>%
+   dplyr::filter(.data$Date == .data$keep) %>%
+   dplyr::ungroup() %>%
+   dplyr::select(-"keep")
 }
 
 well_hist_compare <- function(w_dates, w_hist) {
