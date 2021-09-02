@@ -341,11 +341,9 @@ tbl_a
 
 ### C - Run info
 
-**Date/Time:** `r Sys.time()`
-
-
 #### Parameters
 
+- **Observation Wells** (`ows`): `r glue_collapse(ows, ", ")`
 - **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
 - **No. Days on either side of report date in which search for alternate date** (`n_days`): `r n_days`
   - Total window around (and including) a reporting date is **`r n_days * 2 + 1` days**
