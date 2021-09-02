@@ -115,12 +115,14 @@ well_map(details)
 
 ### Overall
 
+The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date
+
 ```{r wells_below_normal_overall}
 t <- well_table_below_norm(w_perc, window, which = "totals")
   
 foot <- "(X/Y) indicates X wells with low values out of Y wells total for that date" 
 if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("* {note_values}"))
-if(any(t == "")) foot <- c(foot, note_no_data)
+if(any(t == "" | is.na(t))) foot <- c(foot, note_no_data)
 
 t %>%
   kable(format = "html", align = "cccc") %>%
