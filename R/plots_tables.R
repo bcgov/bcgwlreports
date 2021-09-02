@@ -210,7 +210,7 @@ well_table_below_norm <- function(w_perc, window, which = "totals") {
   if(which == "totals") {
     r <- w_perc %>%
       dplyr::select(-"subtype") %>%
-      dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
+      dplyr::filter(stringr::str_detect(.data$class, "low|Min")) %>%
       dplyr::group_by(.data$report_dates) %>%
       dplyr::summarize(t = unique(.data$n_total_date),
                        n = sum(.data$n_class_subtype),
@@ -223,7 +223,7 @@ well_table_below_norm <- function(w_perc, window, which = "totals") {
       dplyr::arrange(dplyr::desc(.data$report_dates))
   } else {
     r <- w_perc %>%
-      dplyr::filter(stringr::str_detect(.data$class, "low")) %>%
+      dplyr::filter(stringr::str_detect(.data$class, "low|Min")) %>%
       dplyr::left_join(type_values, by = "subtype") %>%
       dplyr::group_by(.data$report_dates, .data[[which]], .data$subtype) %>%
       dplyr::summarize(t = unique(.data$n_total_subtype),
