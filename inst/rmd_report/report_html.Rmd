@@ -1,5 +1,4 @@
 ---
-date: "`r Sys.Date()`"
 output: 
   html_document:
     toc: true
@@ -24,7 +23,7 @@ h2 {
   padding-left: 0.2em;
   margin-top: 30px;
   background-color: #337ab7;
-  border-top: 2px solid grey;
+    border-top: 2px solid grey;
   color: white;
 }
 
@@ -37,7 +36,7 @@ body {
 }
 
 .leaflet {
-    margin: auto;
+  margin: auto;
 }
 
 .bcgwl-table {
@@ -95,36 +94,53 @@ note_values <- glue("not all reporting dates had data, these include values obta
 note_no_data <- "Blank cells indicate no data"
 ```
 
+
 ```{r description, results = "asis"}
 if(!is.null(params$description) && params$description != "") {
-  cat("## Description\n\n")
   cat(params$description)
 }
 ```
 
+This report was generated on `r format(Sys.Date(), "%B %d, %Y")`.
 
-## Map
+## Background
 
-**Notes:**
+The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.
 
-🐟 = Likely hydraulically connected
+The following summaries compare recent groundwater levels to historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all years of data.
 
+In general, a groundwater level value that is:
+
+* the highest ever measured for the day of year is considered <span style="color: black;">**High**</span>
+* greater than the 90th percentile is considered <span style="color: blue;">**Much Above Normal**</span>
+* between 75th percentile and 90th percentile is considered <span style="color: cyan;">**Above Normal**</span>
+* between 25th and 75th percentiles is considered <span style="color: green;">**Normal**</span>
+* less than the 25 percentile is considered <span style="color: #FFCC00;">**Below Normal**</span>
+* less than 10 percentile is considered <span style="color: #800000;">**Much Below Normal**</span>
+* the lowest ever measured for the day of year is considered <span style="color: red;">**Low**</span>.
+
+
+## Groundwater Levels Map
 
 ```{r wells_map}
 details <- well_table_summary(w_dates, w_hist, perc_values)
 well_map(details)
 ```
 
+**Notes:**
 
-## Wells below normal
+🐟 = Likely hydraulically connected
 
-### Overall
+## Wells Below Normal
 
-The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date.
+This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison.
+
+
+### All Wells Below Normal
 
 ```{r wells_below_normal_overall}
 t <- well_table_below_norm(w_perc, window, which = "totals")
-  
+
 foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date" 
 if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
 if(any(t == "" | is.na(t))) foot <- c(foot, glue("&bull; {note_no_data}"))
@@ -132,6 +148,7 @@ if(any(t == "" | is.na(t))) foot <- c(foot, glue("&bull; {note_no_data}"))
 t %>%
   kable(format = "html", align = "cccc") %>%
   kable_styling(
+    position = "left",
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
@@ -139,9 +156,7 @@ t %>%
   kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
-### Groundwater Level Status
-
-**Number of wells in each water level percentile class by date**
+### Wells by Percentile Classes
 
 ```{r percentile_class}
 t <- well_table_status(w_perc, perc_values, window) %>%
@@ -150,6 +165,7 @@ t <- well_table_status(w_perc, perc_values, window) %>%
 tbl <- t %>%
   kable(format = "html", align = "lcccc") %>%
   kable_styling(
+    position = "left",
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   column_spec(1, background = c(perc_values$colour, "white"),
@@ -166,11 +182,7 @@ if(any(str_detect(names(t), "\\*"))) {
 tbl
 ```
 
-### Hydraulic connectivity
-
-**Wells below normal by hydraulic connectivity**
-
-The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date by hydraulic connectivity.
+### Wells by Hydraulic Connectivity
 
 ```{r wells_below_normal_type}
 t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
@@ -182,6 +194,7 @@ if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
 t %>%
   kable(format = "html", align = "lcccc") %>%
   kable_styling(
+    position = "left",
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
@@ -191,11 +204,7 @@ t %>%
 ```
 
 
-### Wells by aquifer type
-
-**Wells below normal by aquifer type**
-
-The total proportion of wells with water levels below normal or lower (i.e. 25th percentile or lower) on a given report date by aquifer type.
+### Wells by Aquifer Type
 
 ```{r wells_below_normal_connectivity}
 t <- well_table_below_norm(w_perc, window, which = "type")
@@ -207,6 +216,7 @@ if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
 t %>%
   kable(format = "html", align = "lcccc") %>%
   kable_styling(
+    position = "left",
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
@@ -214,7 +224,7 @@ t %>%
   kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
-## Latest details
+## Observation Well Latest Details
 
 ```{r well_summaries_prep}
 bg_colour <- details$bg_colour
@@ -241,7 +251,7 @@ foot <- c("&bull; Values are in meters below ground",
                "whereas <span style = 'background-color:{c_scale[2]}'>",
                "Orange</span> indicates an decrease in water level ",
                "(increase in depth below ground)."))
-if(any(details == "" | is.na(details))) foot <- c(foot, note_no_data)
+#if(any(details == "" | is.na(details))) foot <- c(foot, note_no_data)
 ```
 
 **Latest details on observation wells in `r year(details[["Latest\nDate"]][1])`**
@@ -262,9 +272,16 @@ details %>%
             indent = FALSE)
 
 ```
-  
 
-## Plots
+
+## Historical Water Level Plots
+
+Annual hydrographs and historical records for the observation wells summarized above can be found in this section.
+
+Current conditions for provincial groundwater observation wells can be accessed any time through the [Groundwater Level Data Interactive Map]( https://www2.gov.bc.ca/gov/content/environment/air-land-water/water/groundwater-wells-aquifers/groundwater-observation-well-network/groundwater-level-data-interactive-map).
+
+Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as 'Working' and what will become the official record.
+
 
 ```{r plots, results = "asis", fig.asp = 0.9, fig.width = 10}
 latest_date <- w_dates %>% 
@@ -332,7 +349,7 @@ tbl_a <- a %>%
   add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4), 
                    bold = TRUE)
 
-if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("&bull; {note_no_data}"), escape = FALSE)
+#if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("&bull; {note_no_data}"), escape = FALSE)
 
 tbl_a
 
@@ -366,7 +383,7 @@ tbl_a
   - Total window around (and including) a reporting date is **`r n_days * 2 + 1` days**
 - **Percentile Calculations**
   - **Min number of years** (`years_min`) - `r years_min`
-  
+
 #### Session Info
 
 **Platform**
