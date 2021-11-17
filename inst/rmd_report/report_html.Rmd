@@ -57,6 +57,10 @@ body {
 .lightable-classic tfoot tr:first-child td {
   border-top: 2px solid black;
 }
+
+.footnote {
+  color: #666666;
+}
 ```
 
 
@@ -160,7 +164,8 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c("Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot, escape = FALSE)
+  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
+                       escape = FALSE)
 ```
 
 
@@ -183,8 +188,9 @@ tbl <- t %>%
   add_header_above(c("", "Current Year" = 2, "Last Year" = 2), bold = TRUE)
 
 if(any(str_detect(names(t), "\\*"))) {
-  tbl <- footnote(tbl, general = glue("&bull; * {note_values}"), 
-                  escape = FALSE)
+  tbl <- tbl %>%
+    footnote(general = glue("<span class = 'footnote'>&bull; * {note_values}</span>"), 
+             escape = FALSE)
 }
 
 tbl
@@ -208,7 +214,8 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot, escape = FALSE)
+  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
+                       escape = FALSE)
 
 ```
 
@@ -232,7 +239,8 @@ t %>%
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
   row_spec(0, bold = TRUE) %>%
   add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = foot, escape = FALSE)
+  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
+                       escape = FALSE)
 ```
 
 
@@ -278,7 +286,8 @@ details %>%
     fixed_thead = TRUE,
     bootstrap_options = "hover", full_width = FALSE, 
     htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  footnote(general = foot, escape = FALSE) %>%
+  footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
+           escape = FALSE) %>%
   column_spec(str_which(names(details), "Percentile"), 
               background = bg_colour, color = txt_colour) %>%
   column_spec(str_which(names(details), "Recent\nChange"),
@@ -368,7 +377,7 @@ tbl_a <- a %>%
   add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4), 
                    bold = TRUE)
 
-#if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("&bull; {note_no_data}"), escape = FALSE)
+#if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("<span class = 'footnote'>&bull; {note_no_data}</span>"), escape = FALSE)
 
 tbl_a
 
