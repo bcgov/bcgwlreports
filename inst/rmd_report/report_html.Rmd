@@ -103,7 +103,10 @@ if(!is.null(params$description) && params$description != "") {
 
 This report was generated on `r format(Sys.Date(), "%B %d, %Y")`.
 
-## Background
+## Background {#background}
+
+<details>
+  <summary>Show</summary>
 
 The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.
 
@@ -119,8 +122,9 @@ In general, a groundwater level value that is:
 * less than 10 percentile is considered <span style="color: #800000;">**Much Below Normal**</span>
 * the lowest ever measured for the day of year is considered <span style="color: red;">**Low**</span>.
 
+</details>
 
-## Groundwater Levels Map
+## Groundwater Levels Map {#map}
 
 ```{r wells_map}
 details <- well_table_summary(w_dates, w_hist, perc_values)
@@ -131,12 +135,15 @@ well_map(details)
 
 🐟 = Likely hydraulically connected
 
-## Wells Below Normal
+
+## Wells Below Normal {#wells-below-normal .tabset}
+
+### **Description**
 
 This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison.
 
+### All Wells
 
-### All Wells Below Normal
 
 ```{r wells_below_normal_overall}
 t <- well_table_below_norm(w_perc, window, which = "totals")
@@ -156,7 +163,8 @@ t %>%
   kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
-### Wells by Percentile Classes
+
+### By Percentile Classes
 
 ```{r percentile_class}
 t <- well_table_status(w_perc, perc_values, window) %>%
@@ -182,7 +190,8 @@ if(any(str_detect(names(t), "\\*"))) {
 tbl
 ```
 
-### Wells by Hydraulic Connectivity
+
+### By Hydraulic Connectivity
 
 ```{r wells_below_normal_type}
 t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
@@ -204,7 +213,9 @@ t %>%
 ```
 
 
-### Wells by Aquifer Type
+
+### By Aquifer Type
+
 
 ```{r wells_below_normal_connectivity}
 t <- well_table_below_norm(w_perc, window, which = "type")
@@ -224,7 +235,11 @@ t %>%
   kableExtra::footnote(general = foot, escape = FALSE)
 ```
 
-## Observation Well Latest Details
+
+## Observation Well Latest Details {#details}
+
+<details>
+  <summary>Show</summary>
 
 ```{r well_summaries_prep}
 bg_colour <- details$bg_colour
@@ -274,14 +289,18 @@ details %>%
 ```
 
 
-## Historical Water Level Plots
+</details>
+
+
+## Historical Water Level Plots {#plots .tabset} 
+
+### **Description**
 
 Annual hydrographs and historical records for the observation wells summarized above can be found in this section.
 
 Current conditions for provincial groundwater observation wells can be accessed any time through the [Groundwater Level Data Interactive Map]( https://www2.gov.bc.ca/gov/content/environment/air-land-water/water/groundwater-wells-aquifers/groundwater-observation-well-network/groundwater-level-data-interactive-map).
 
 Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as 'Working' and what will become the official record.
-
 
 ```{r plots, results = "asis", fig.asp = 0.9, fig.width = 10}
 latest_date <- w_dates %>% 
@@ -319,7 +338,7 @@ for(ow in sort(ows)) {
 ```
 
 
-## Appendices
+## Appendices {#appendices .tabset}
 
 ### A - Dates
 
