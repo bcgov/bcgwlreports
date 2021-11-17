@@ -50,7 +50,7 @@ well_map <- function(details, format = "html") {
                                noHide = TRUE, textOnly = TRUE, direction = "top",
                                style = list("font-weight" = "bold",
                                             "font-size" = "12px"))) %>%
-   leaflet::addLegend("topright", title = "Water Levels",
+   leaflet::addLegend("topright", title = "Groundwater Levels",
                       colors = perc_values$colour,
                       labels = perc_values$nice,
                       values = ~as.vector(bg_colour))
