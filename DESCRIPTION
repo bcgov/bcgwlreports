@@ -1,13 +1,13 @@
 Package: bcgwlreports
-Title: What the Package Does (One Line, Title Case)
+Title: Create BC Groundwater Level Reports
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    c(person("Steffi", "LaZerte", email = "steffi@steffi.ca", role = c("aut", "cre"), 
+             comment = c(ORCID = "0000-0002-7690-8360")),
+      person("Jon", "Goetz", email = "jon.goetz@gov.bc.ca", role = c("aut"),
+             comment = c(ORCID = "0000-0002-4993-1119")))
+Description: Fetch data, calculate historical percentilesa and create 
+    reports of BC groundwater levels for set dates. 
 License: Apache License (>= 2)
 Encoding: UTF-8
 LazyData: true
