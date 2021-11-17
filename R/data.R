@@ -34,7 +34,7 @@ data_details <- function(cache_age) {
     cont <- utils::askYesNo(
       paste0("bcgwlreports would like to store data for the reports ",
              "in: \n", data_cache(), "\nIs that okay? ",
-             "(You can always use data_cache_clean() to remove it)"))
+             "(You can always use clean_cache() to remove it)"))
 
     if(!cont) {
       message("Can't store data. Stopping.")
@@ -76,7 +76,7 @@ data_loc <- function(type = NULL, ext = "rds") {
 #'
 #' @examples
 #'
-#' # data_cache_clean()
+#' # clean_cache()
 #'
 #' @export
 
