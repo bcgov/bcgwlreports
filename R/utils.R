@@ -33,7 +33,8 @@ ow_link <- function(ow, format) {
 ow_fish <- function(ow) {
   well_meta(ow) %>%
     dplyr::mutate(ow = if_else(.data$hydraulic_connectivity == "Likely",
-                               as.character(glue("{.data$ow}  🐟")), .data$ow)) %>%
+                               as.character(paste(.data$ow, emo::ji("fish"))),
+                               .data$ow)) %>%
     dplyr::pull(ow)
 }
 
