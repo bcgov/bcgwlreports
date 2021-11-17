@@ -137,7 +137,7 @@ well_map(details)
 
 **Notes:**
 
-🐟 = Likely hydraulically connected
+`r emo::ji("fish")` = Likely hydraulically connected
 
 
 ## Wells Below Normal {#wells-below-normal .tabset}
