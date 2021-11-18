@@ -12,30 +12,101 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-bcgwl_style <- function(kable_input, ...) {
-  kable_classic(kable_input,
-                lightable_options = "hover", full_width = FALSE,
-                html_font = "\"Arial\", \"Source Sans Pro\", sans-serif",
-                ...)
+gt_perc_colours <- function(gt, perc_col = "percentile") {
+
+  if(perc_col == "stub") {
+    for(i in seq_len(nrow(perc_values)))
+      gt <- gt %>%
+        tab_style(style = list(cell_fill(perc_values$colour[i]),
+                               cell_text(perc_values$txt_colour[i])),
+                  locations = cells_stub(rows = i))
+  } else {
+    for(i in seq_len(nrow(perc_values))) {
+      gt <- gt %>%
+        tab_style(style = list(cell_fill(perc_values$colour[i]),
+                               cell_text(perc_values$txt_colour[i])),
+                  locations = cells_body(rows = class == perc_values$nice[i],
+                                         columns = perc_col))
+    }
+  }
+  gt
 }
+
+
+gt_bcgwl_style <- function(gt) {
+  gt %>%
+    tab_style(style = cell_text(weight = "bold", size = "large"),
+              locations = cells_column_labels()) %>%
+    tab_style(style = cell_text(weight = "bold", size = "large"),
+              locations = cells_column_spanners()) %>%
+    tab_style(style = cell_text(weight = "bold"),
+              locations = cells_row_groups()) %>%
+    tab_style(style = cell_text(color = "#666666"),
+              locations = cells_footnotes()) %>%
+    tab_options(table_body.hlines.width = 0,
+                data_row.padding = px(5),
+                footnotes.padding = px(2),
+                table.border.top.color = "black",
+                table.border.top.width = px(3),
+                table.border.bottom.color = "black",
+                table_body.border.top.color = "black",
+                table_body.border.bottom.color = "black",
+                stub.border.width = 0)
+}
+
+footnotes_below_normal <- function(gt, missing_dates, missing_data, n_days = NULL) {
+  foot1 <- glue("(X/Y) indicates X wells with low values out of Y wells ",
+                "total for that date")
+  foot2 <- "Blank cells indicate no data"
+  foot3 <- glue("Not all reporting dates had data. Includes values ",
+                "obtained from a {n_days*2 + 1}-day window centred on the ",
+                "reporting date")
+
+  # First foot
+  gt <- gt::tab_footnote(gt, footnote = foot1,
+                         locations = gt::cells_column_spanners(1))
+  marks <- ""
+
+  # Optional extras
+  if(missing_data) {
+    gt <- gt::tab_footnote(gt, footnote = foot2,
+                           locations = gt::cells_column_spanners(2))
+    marks <- c(marks, "")
+  }
+
+  if(length(missing_dates) > 0) {
+    gt <- gt::tab_footnote(
+      gt, footnote = foot3,
+      locations = gt::cells_column_labels(all_of(missing_dates)))
+    marks <- c(marks, "\u2731")
+  }
+
+  # Needs at least two to use custom marks
+  if(length(marks) == 1) marks <- c(marks, "")
+
+  opt_footnote_marks(gt, marks = marks)
+}
+
 
 well_map <- function(details, format = "html") {
 
  locs <- data_load("wells_sf") %>%
-   dplyr::right_join(dplyr::select(details, "ow", "bg_colour",
-                                   "Percentile"), by = "ow") %>%
+   dplyr::right_join(dplyr::select(details, "ow", "class", "percentile"),
+                     by = "ow") %>%
    dplyr::mutate(
-     Percentile = stringr::str_extract(.data$Percentile,
-                                       "^[[:alpha:] ]+ \\([[:digit:]]+\\%\\)"),
-     Percentile = tidyr::replace_na(.data$Percentile, "No current data")) %>%
+     percentile = if_else(is.na(percentile),
+                          glue("No current data"),
+                          glue("{percentile}%"))) %>%
    sf::st_transform(4326) %>%
    dplyr::left_join(region_names, by = "ow") %>%
    dplyr::mutate(tooltip = glue::glue(
      "<strong>Well</strong>: {ow_link(ow_fish(.data$ow), format = format)}<br>",
      "<strong>Region</strong>: {.data$region}<br>",
      "<strong>Location</strong>: {.data$location}<br>",
-     "<strong>Current percentile</strong>: {.data$Percentile}"),
+     "<strong>Current percentile</strong>: {.data$percentile}"),
      tooltip = purrr::map(.data$tooltip, htmltools::HTML))
+
+ perc_pal <- leaflet::colorFactor(perc_values$colour, perc_values$nice)
 
  regions <- data_load("regions") %>%
    sf::st_transform(4326)
@@ -43,7 +114,7 @@ well_map <- function(details, format = "html") {
  leaflet::leaflet(data = locs) %>%
    leaflet::addProviderTiles("Stamen.Terrain") %>%
    leaflet::addCircleMarkers(color = "black",
-                             fillColor = ~as.vector(bg_colour), weight = 1,
+                             fillColor = ~perc_pal(class), weight = 1,
                              fillOpacity = 1, radius = 7,
                              popup = ~tooltip, label = ~ow,
                              labelOptions = leaflet::labelOptions(
@@ -51,9 +122,8 @@ well_map <- function(details, format = "html") {
                                style = list("font-weight" = "bold",
                                             "font-size" = "12px"))) %>%
    leaflet::addLegend("topright", title = "Groundwater Levels",
-                      colors = perc_values$colour,
-                      labels = perc_values$nice,
-                      values = ~as.vector(bg_colour))
+                      pal = perc_pal, values = ~c(perc_values$nice, NA),
+                      na.label = "No current data")
 }
 
 
@@ -283,7 +353,6 @@ well_table_status <- function(w_perc, perc_values, window) {
 }
 
 well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
-
   t <- well_hist_compare(w_dates, w_hist)
 
   last_year <- t %>%
@@ -308,32 +377,17 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       .cols = c("Value", "value_last_year", "recent_diff"),
       ~if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
     dplyr::mutate(
-      ow_link = ow_fish(.data$ow),
-      ow_link = ow_link(.data$ow_link, format = format),
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
-      Value = dplyr::if_else(.data$Approval == "Working" & !is.na(.data$Value),
-                             as.character(glue::glue("{Value}*")),
-                             as.character(.data$Value)),
-      percentile = glue::glue("{class} ",
-                              "({round((1 - percentile) * 100)}{percent})<br>",
-                              "<small>(n = {n_years})</small>"),
-      percentile = dplyr::if_else(is.na(Value), NA_character_, as.character(percentile))) %>%
+      percentile = round((1 - percentile) * 100)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$region, .data$area, .data$location, .data$ow) %>%
-    dplyr::mutate(
-      bg_colour = rlang::set_names(!!perc_values$colour, !!perc_values$nice)[.data$class],
-      bg_colour = tidyr::replace_na(.data$bg_colour, "white"),
-      txt_colour = rlang::set_names(!!perc_values$txt_colour, !!perc_values$nice)[.data$class],
-      txt_colour = tidyr::replace_na(.data$txt_colour, "black"),
-      ) %>%
+    dplyr::rename_with(tolower) %>%
     dplyr::select(
-      "bg_colour", "txt_colour", "ow",
-      "region",
-      "Area" = "area", "Location" = "location", "Obs.\nWell" = "ow_link",
-      "Hydraulic\nConnection" = "hydraulic_connectivity", "Aquifer Type" = "type",
-      "Latest\nDate" = "Date", "Percentile" = "percentile",
-      "Latest\nValue" = "Value", "Previous Year's\nValue" = "value_last_year",
-      "Recent\nChange" = "recent_diff")
+      "ow", "region", "area", "location",
+      "hydraulic_connectivity", "aquifer_type" = "type",
+      "date", "class", "percentile", "n_years", "approval",
+      "value", "value_last_year",
+      "recent_diff")
 }
 
 appendix_dates <- function(w_dates, format = "html") {

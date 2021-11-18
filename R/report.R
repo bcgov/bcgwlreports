@@ -17,6 +17,11 @@
 #' @param ows Character vector. Observation well numbers (e.g, "OW000")
 #' @param report_dates Character vector. Two current dates to explore. By
 #'   default a date 2 week ago and 4 weeks before that are used.
+#' @param title Character. Title of the report.
+#' @param description Character. Descriptive paragraph to place at the start.
+#' @param remarks Character / data frame. Path to file OR data frame containing
+#'   remarks on specific observation wells to be included in the main summary
+#'   table (see Details).
 #' @param n_days Numeric. If there is no data on the report date chosen, this is
 #'   the range of days over which to look for alternative dates with data.
 #'   Defaults to 2 weeks, meaning 2 weeks before and 2 weeks after a given
@@ -28,12 +33,34 @@
 #' @param cache_age Logical. Maxmum age in days of cached datasets (not obs well
 #'   data, but metadata related to regional maps, aquifer and wells).
 #'
+#'
+#' @details `remarks` can be a file path to a TSV (tab-separated) text file or
+#'   Excel file contain columns 'ow' and 'remarks', or it can be a
+#'   `data.frame()`/`tibble()` (see examples) containing the same. Note that CSV
+#'   is not permitted as ',' is used for separating variables which can make it
+#'   difficult to write out complete, complex remarks.
+#'
 #' @examples
 #'
 #' \dontrun{
 #'
 #' well_report(ows = c("OW008", "OW217", "OW377", "OW197"))
 #'
+#' # If short, easiest to add remarks in script:
+#'
+#' library(dplyr)
+#'
+#' remarks <- tribble(~ow,     ~remarks,
+#'                    "OW377", "Construction in the area disrupting measurements",
+#'                    "OW008", "No problems")
+#'
+#' well_report(ows = c("OW008", "OW217", "OW377", "OW197"),
+#'             remarks = remarks)
+#'
+#' # Or load from a file
+#' library(readr)
+#' write_tsv(remarks, "remarks.txt")
+#' check_remarks(remarks = "remarks.txt")
 #' }
 #'
 #' @export
@@ -41,9 +68,9 @@
 well_report <- function(ows,
                         report_dates = c(Sys.Date() - lubridate::weeks(2),
                                          Sys.Date() - lubridate::weeks(4)),
-                        title = NULL,
-                        description = NULL, n_days = 13,
-                        years_min = 5, out_dir = ".", cache_age = 7) {
+                        title = NULL, description = NULL, remarks = NULL,
+                        n_days = 13, years_min = 5, out_dir = ".",
+                        cache_age = 7) {
 
 
   check_numeric(n_days, type = "n_days", lower = 0)
@@ -54,6 +81,8 @@ well_report <- function(ows,
   check_title(title)
   description <- check_description(description)
   report_dates <- check_dates(report_dates, n_days)
+
+  remarks <- check_remarks(remarks, ows)
 
   # Update the local data if cache out of date
   data_update(cache_age)
@@ -87,6 +116,7 @@ well_report <- function(ows,
   rmarkdown::render(system.file("rmd_report", "report_html.Rmd",
                                 package = "bcgwlreports"),
                     params = list("title" = title, "description" = description,
+                                  "remarks" = remarks,
                                   "w_full" = w_full, "w_hist" = w_hist,
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,

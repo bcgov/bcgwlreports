@@ -109,3 +109,39 @@ check_out_dir <- function(out_dir) {
 }
 
 
+check_remarks <- function(remarks, ows) {
+
+  # Data frame or file?
+  if(!is.data.frame(remarks)) {
+    if(length(remarks) > 1 ||
+       !stringr::str_detect(tolower(remarks), ".[a-z]{3,4}$")) {
+      stop("'remarks' must either be a data frame or a path to a ",
+           "TSV or Excel file", call. = FALSE)
+    }
+
+    if(file.exists(remarks)) {
+      stop("Cannot find the 'remarks' file:\n", normalizePath(remarks),
+           call. = FALSE)
+    }
+
+    ext <- stringr::str_extract(tolower(remarks), "[a-z]{3,4}$")
+
+    if(stringr::str_detect(ext, "xls|xlxs")) {
+      read <- readxl::read_excel
+    } else read <- readr::read_tsv
+    remarks <- read(remarks, show_col_types = FALSE)
+  }
+
+  remarks <- dplyr::rename_with(remarks, tolower)
+
+  if(any(!c("ow", "remarks") %in% names(remarks))) {
+    stop("'remarks' data must have columns 'ow' and 'remarks'", call. = FALSE)
+  }
+
+  if(!any(ows %in% remarks$ow)) {
+    warning("None of the Obs wells in 'remarks' are in the set of observation ",
+            "wells for the report ('ows')")
+  }
+
+  remarks
+}

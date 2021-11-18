@@ -9,7 +9,8 @@ well_report(
   report_dates = c(Sys.Date() - lubridate::weeks(2), Sys.Date() - lubridate::weeks(4)),
   title = NULL,
   description = NULL,
-  n_days = 14,
+  remarks = NULL,
+  n_days = 13,
   years_min = 5,
   out_dir = ".",
   cache_age = 7
@@ -20,6 +21,14 @@ well_report(
 
 \item{report_dates}{Character vector. Two current dates to explore. By
 default a date 2 week ago and 4 weeks before that are used.}
+
+\item{title}{Character. Title of the report.}
+
+\item{description}{Character. Descriptive paragraph to place at the start.}
+
+\item{remarks}{Character / data frame. Path to file OR data frame containing
+remarks on specific observation wells to be included in the main summary
+table (see Details).}
 
 \item{n_days}{Numeric. If there is no data on the report date chosen, this is
 the range of days over which to look for alternative dates with data.
@@ -38,12 +47,34 @@ data, but metadata related to regional maps, aquifer and wells).}
 \description{
 Compile report
 }
+\details{
+\code{remarks} can be a file path to a TSV (tab-separated) text file or
+Excel file contain columns 'ow' and 'remarks', or it can be a
+\code{data.frame()}/\code{tibble()} (see examples) containing the same. Note that CSV
+is not permitted as ',' is used for separating variables which can make it
+difficult to write out complete, complex remarks.
+}
 \examples{
 
 \dontrun{
 
 well_report(ows = c("OW008", "OW217", "OW377", "OW197"))
 
+# If short, easiest to add remarks in script:
+
+library(dplyr)
+
+remarks <- tribble(~ow,     ~remarks,
+                   "OW377", "Construction in the area disrupting measurements",
+                   "OW008", "No problems")
+
+well_report(ows = c("OW008", "OW217", "OW377", "OW197"),
+            remarks = remarks)
+
+# Or load from a file
+library(readr)
+write_tsv(remarks, "remarks.txt")
+check_remarks(remarks = "remarks.txt")
 }
 
 }

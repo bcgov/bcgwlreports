@@ -6,6 +6,7 @@ output:
 params: 
   title: NULL
   description: NULL
+  remarks: NULL
   w_full: ""
   w_hist: ""
   w_comp: ""
@@ -57,10 +58,6 @@ body {
 .lightable-classic tfoot tr:first-child td {
   border-top: 2px solid black;
 }
-
-.footnote {
-  color: #666666;
-}
 ```
 
 
@@ -68,7 +65,7 @@ body {
 ```{r setup, include=FALSE}
 library(dplyr)
 library(ggplot2)
-library(kableExtra)
+library(gt)
 library(glue)
 library(lubridate)
 library(stringr)
@@ -93,9 +90,12 @@ window <- w_perc %>%
   pull(report_dates) %>%
   unique()
 
-note_value <- glue("reporting date was missing data, this value came from an alternative date within a {n_days*2 + 1}-day window centred on the reporting date")
-note_values <- glue("not all reporting dates had data, these include values obtained from a {n_days*2 + 1}-day window centred on the reporting date")
-note_no_data <- "Blank cells indicate no data"
+range1 <- length(report_dates)/2
+range2 <- (range1 + 1):(range1 * 2)
+range1 <- 1:range1
+
+remarks <- tibble(ow = NA, remarks = NA, .rows = 0)
+if(!is.null(params$remarks)) remarks <- params$remarks
 ```
 
 
@@ -118,13 +118,20 @@ The following summaries compare recent groundwater levels to historical continuo
 
 In general, a groundwater level value that is:
 
-* the highest ever measured for the day of year is considered <span style="color: black;">**High**</span>
-* greater than the 90th percentile is considered <span style="color: blue;">**Much Above Normal**</span>
-* between 75th percentile and 90th percentile is considered <span style="color: cyan;">**Above Normal**</span>
-* between 25th and 75th percentiles is considered <span style="color: green;">**Normal**</span>
-* less than the 25 percentile is considered <span style="color: #FFCC00;">**Below Normal**</span>
-* less than 10 percentile is considered <span style="color: #800000;">**Much Below Normal**</span>
-* the lowest ever measured for the day of year is considered <span style="color: red;">**Low**</span>.
+* the highest ever measured for the day of year is considered 
+  <span style="color: `r perc_values$colour[1]`;">**High**</span>
+* greater than the 90th percentile is considered 
+  <span style="color: `r perc_values$colour[2]`;">**Much Above Normal**</span>
+* between 75th percentile and 90th percentile is considered 
+  <span style="color: `r perc_values$colour[3]`;">**Above Normal**</span>
+* between 25th and 75th percentiles is considered 
+  <span style="color: `r perc_values$colour[4]`;">**Normal**</span>
+* less than the 25 percentile is considered 
+  <span style="color: `r perc_values$colour[5]`;">**Below Normal**</span>
+* less than 10 percentile is considered 
+  <span style="color: `r perc_values$colour[6]`;">**Much Below Normal**</span>
+* the lowest ever measured for the day of year is considered
+  <span style="color: `r perc_values$colour[7]`;">**Low**</span>.
 
 </details>
 
@@ -152,48 +159,37 @@ This section reports on the number and total proportion of wells below normal or
 ```{r wells_below_normal_overall}
 t <- well_table_below_norm(w_perc, window, which = "totals")
 
-foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
-if(any(t == "" | is.na(t))) foot <- c(foot, glue("&bull; {note_no_data}"))
-
+# Get footnotes needed
+missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
+missing_data <- any(t == "" | is.na(t))
 t %>%
-  kable(format = "html", align = "cccc") %>%
-  kable_styling(
-    position = "left",
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  row_spec(0, bold = TRUE) %>%
-  add_header_above(c("Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
-                       escape = FALSE)
+  rename_with(~str_remove(., "\\*")) %>%
+  gt() %>%
+  gt_bcgwl_style() %>%
+  tab_spanner(label = "Current Year", columns = !!range1) %>%
+  tab_spanner(label = "Last Year", columns = !!range2) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
 ```
 
 
 ### By Percentile Classes
 
 ```{r percentile_class}
-t <- well_table_status(w_perc, perc_values, window) %>%
-  select(` ` = class, everything())
+t <- well_table_status(w_perc, perc_values, window)
 
-tbl <- t %>%
-  kable(format = "html", align = "lcccc") %>%
-  kable_styling(
-    position = "left",
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  column_spec(1, background = c(perc_values$colour, "white"),
-              color = c(perc_values$txt_colour, "black")) %>%
-  row_spec(0, bold = TRUE) %>%
-  row_spec(nrow(t), extra_css = "border-top: 1px solid #ddd") %>%
-  add_header_above(c("", "Current Year" = 2, "Last Year" = 2), bold = TRUE)
+# Get footnotes needed
+missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
+missing_data <- any(t == "" | is.na(t))
 
-if(any(str_detect(names(t), "\\*"))) {
-  tbl <- tbl %>%
-    footnote(general = glue("<span class = 'footnote'>&bull; * {note_values}</span>"), 
-             escape = FALSE)
-}
-
-tbl
+t %>%
+  rename_with(~str_remove(., "\\*")) %>%
+  gt(rowname_col = "class") %>%
+  gt_bcgwl_style() %>%
+  gt_perc_colours(perc_col = "stub") %>%
+  cols_align("center") %>%
+  tab_spanner(label = "Current Year", columns = 1 + !!range1) %>%
+  tab_spanner(label = "Last Year", columns = 1 + !!range2) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
 ```
 
 
@@ -202,21 +198,17 @@ tbl
 ```{r wells_below_normal_type}
 t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
 
-foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date/category" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
-if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
+# Get footnotes needed
+missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
+missing_data <- any(t == "" | is.na(t))
 
 t %>%
-  kable(format = "html", align = "lcccc") %>%
-  kable_styling(
-    position = "left",
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  row_spec(0, bold = TRUE) %>%
-  add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
-                       escape = FALSE)
-
+  rename_with(~str_remove(., "\\*")) %>%
+  gt() %>%
+  gt_bcgwl_style() %>%
+  tab_spanner(label = "Current Year", columns = 1 + (1:rd)) %>%
+  tab_spanner(label = "Last Year", columns = 1 + ((rd + 1):(rd * 2))) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
 ```
 
 
@@ -227,20 +219,17 @@ t %>%
 ```{r wells_below_normal_connectivity}
 t <- well_table_below_norm(w_perc, window, which = "type")
 
-foot <- "&bull; (X/Y) indicates X wells with low values out of Y wells total for that date/category" 
-if(any(str_detect(names(t), "\\*"))) foot <- c(foot, glue("&bull; * {note_values}"))
-if(any(t == "")) foot <- c(foot, glue("&bull; {note_no_data}"))
+# Get footnotes needed
+missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
+missing_data <- any(t == "" | is.na(t))
 
 t %>%
-  kable(format = "html", align = "lcccc") %>%
-  kable_styling(
-    position = "left",
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  row_spec(0, bold = TRUE) %>%
-  add_header_above(c(" " = 1, "Current Year" = 2, "Last Year" = 2), bold = TRUE) %>%
-  kableExtra::footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
-                       escape = FALSE)
+  rename_with(~str_remove(., "\\*")) %>%
+  gt() %>%
+  gt_bcgwl_style() %>%
+  tab_spanner(label = "Current Year", columns = 1 + (1:rd)) %>%
+  tab_spanner(label = "Last Year", columns = 1 + ((rd + 1):(rd * 2))) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
 ```
 
 
@@ -249,52 +238,44 @@ t %>%
 <details>
   <summary>Show</summary>
 
-```{r well_summaries_prep}
-bg_colour <- details$bg_colour
-txt_colour <- details$txt_colour
-index <- table(details$region)
-
-c_scale <- viridis::inferno(n = 2, begin = 0.3, end = 0.7)
-value_colour <- case_when(as.numeric(details$`Recent\nChange`) < 0 ~ c_scale[1],
-                          details$`Recent\nChange` > 0 ~ c_scale[2],
-                          TRUE ~ "white")
-value_txt_colour <- if_else(value_colour == c_scale[1], "white", "black")
-
-details <- select(details, -"bg_colour", -"txt_colour", -"ow", -"region")
-
-foot <- c("&bull; Values are in meters below ground",
-          glue("&bull; n is the number of years included in ",
-               "the percentile calculation."),
-          "&bull; * indicates Values with an Approval Status of ‘Working’",
-          glue("&bull; Recent change compares latest value to the other report date ",
-               "value for this year ({report_dates[2]}); ",
-               "<span style = 'background-color:{c_scale[1]}; color: white'>",
-               "Purple</span> indicates an increase in water level ",
-               "(decrease in depth below ground), ",
-               "whereas <span style = 'background-color:{c_scale[2]}'>",
-               "Orange</span> indicates an decrease in water level ",
-               "(increase in depth below ground)."))
-#if(any(details == "" | is.na(details))) foot <- c(foot, note_no_data)
-```
-
 **Latest details on observation wells in `r year(details[["Latest\nDate"]][1])`**
 
 ```{r well_summaries}
-details %>%
-  kable(format = "html", escape = FALSE, align = "llcllccccc") %>%
-  kable_styling(
-    fixed_thead = TRUE,
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  footnote(general = glue("<span class = 'footnote'>{foot}</span>"), 
-           escape = FALSE) %>%
-  column_spec(str_which(names(details), "Percentile"), 
-              background = bg_colour, color = txt_colour) %>%
-  column_spec(str_which(names(details), "Recent\nChange"),
-              background = value_colour, color = value_txt_colour) %>%
-  pack_rows(index = index, label_row_css = "border-bottom: 1px solid #ddd",
-            indent = FALSE)
+foot1 <- "n is the number of years included in the percentile calculation."
+foot2 <- "Values with an Approval Status of ‘Working’"
 
+groups <- c("region", "area")
+if(length(unique(details$region)) == 1) groups <- c("area")
+
+details %>%
+  mutate(percentile = if_else(
+    !is.na(percentile), 
+    glue("{class} ({percentile}%)<br><small>(n = {n_years})</small>"),
+    glue("(n = {n_years})")),
+    percentile = purrr::map(percentile, html)) %>%
+  select(region, area, location, ow, hydraulic_connectivity, 
+         aquifer_type, date, percentile, class, approval) %>%
+  left_join(remarks, by = "ow") %>%
+  group_by(across(all_of(groups))) %>%
+  gt() %>%
+  gt_bcgwl_style() %>%
+  cols_hide(c("approval", "class")) %>%
+  cols_label("location" = "Location",
+             "hydraulic_connectivity" = "Hydraulic Connection", 
+             "aquifer_type" = "Aquifer Type",
+             "date" = "Latest Date" , 
+             "percentile" = "Percentile",
+             "ow" = "Obs. Well", 
+             "remarks" = "Remarks") %>%
+  gt_perc_colours() %>%
+  fmt_missing(everything(), missing_text = "") %>%
+  tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
+  tab_footnote(foot2, locations = cells_body(columns = "date", 
+                                             rows = approval == "Working")) %>%
+  opt_footnote_marks(marks = c("a", "\u2731")) %>%
+  text_transform(locations = cells_body(columns = "ow"),
+                 fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
+  cols_align("left", columns = "remarks")
 ```
 
 
