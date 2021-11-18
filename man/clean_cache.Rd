@@ -11,6 +11,6 @@ Removes data cache
 }
 \examples{
 
-# data_cache_clean()
+# clean_cache()
 
 }
