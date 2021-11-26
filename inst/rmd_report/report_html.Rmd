@@ -64,6 +64,9 @@ body {
 
 
 ```{r setup, include=FALSE}
+# options(warn=2)  # Turn warnings to errors for troubleshooting
+
+
 library(dplyr)
 library(ggplot2)
 library(gt)
@@ -95,8 +98,12 @@ range1 <- length(report_dates)/2
 range2 <- (range1 + 1):(range1 * 2)
 range1 <- 1:range1
 
-remarks <- tibble(ow = NA, remarks = NA, .rows = 0)
+remarks <- tibble(ow = NA_character_, remarks = NA_character_, .rows = 0)
 if(!is.null(params$remarks)) remarks <- params$remarks
+
+# Get Water Year
+wy <- unique(w_dates$WaterYear[w_dates$CurrentYear])
+
 ```
 
 
@@ -166,10 +173,10 @@ missing_data <- any(t == "" | is.na(t))
 t %>%
   rename_with(~str_remove(., "\\*")) %>%
   gt() %>%
-  gt_bcgwl_style() %>%
   tab_spanner(label = "Current Year", columns = !!range1) %>%
   tab_spanner(label = "Last Year", columns = !!range2) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  gt_bcgwl_style()
 ```
 
 
@@ -185,12 +192,12 @@ missing_data <- any(t == "" | is.na(t))
 t %>%
   rename_with(~str_remove(., "\\*")) %>%
   gt(rowname_col = "class") %>%
-  gt_bcgwl_style() %>%
   gt_perc_colours(perc_col = "stub") %>%
   cols_align("center") %>%
   tab_spanner(label = "Current Year", columns = 1 + !!range1) %>%
   tab_spanner(label = "Last Year", columns = 1 + !!range2) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  gt_bcgwl_style()
 ```
 
 
@@ -206,10 +213,10 @@ missing_data <- any(t == "" | is.na(t))
 t %>%
   rename_with(~str_remove(., "\\*")) %>%
   gt() %>%
-  gt_bcgwl_style() %>%
-  tab_spanner(label = "Current Year", columns = 1 + (1:rd)) %>%
-  tab_spanner(label = "Last Year", columns = 1 + ((rd + 1):(rd * 2))) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
+  tab_spanner(label = "Current Year", columns = 1 + !!range1) %>%
+  tab_spanner(label = "Last Year", columns = 1 + !!range2) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  gt_bcgwl_style()
 ```
 
 
@@ -227,10 +234,10 @@ missing_data <- any(t == "" | is.na(t))
 t %>%
   rename_with(~str_remove(., "\\*")) %>%
   gt() %>%
-  gt_bcgwl_style() %>%
-  tab_spanner(label = "Current Year", columns = 1 + (1:rd)) %>%
-  tab_spanner(label = "Last Year", columns = 1 + ((rd + 1):(rd * 2))) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days)
+  tab_spanner(label = "Current Year", columns = 1 + !!range1) %>%
+  tab_spanner(label = "Last Year", columns = 1 + !!range2) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  gt_bcgwl_style()
 ```
 
 
@@ -239,7 +246,7 @@ t %>%
 <details>
   <summary>Show</summary>
 
-**Latest details on observation wells in `r year(details[["Latest\nDate"]][1])`**
+**Latest details on observation wells in Water Year `r wy-1` - `r wy`**
 
 ```{r well_summaries}
 foot1 <- "n is the number of years included in the percentile calculation."
@@ -259,7 +266,6 @@ details %>%
   left_join(remarks, by = "ow") %>%
   group_by(across(all_of(groups))) %>%
   gt() %>%
-  gt_bcgwl_style() %>%
   cols_hide(c("approval", "class")) %>%
   cols_label("location" = "Location",
              "hydraulic_connectivity" = "Hydraulic Connection", 
@@ -268,6 +274,7 @@ details %>%
              "percentile" = "Percentile",
              "ow" = "Obs. Well", 
              "remarks" = "Remarks") %>%
+  cols_align("center", columns = "ow") %>%
   gt_perc_colours() %>%
   fmt_missing(everything(), missing_text = "") %>%
   tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
@@ -276,14 +283,15 @@ details %>%
   opt_footnote_marks(marks = c("a", "\u2731")) %>%
   text_transform(locations = cells_body(columns = "ow"),
                  fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
-  cols_align("left", columns = "remarks")
+  cols_align("left", columns = "remarks") %>%
+  gt_bcgwl_style()
 ```
 
 
 </details>
 
 
-## Historical Water Level Plots {#plots .tabset} 
+## Historical Water Level Plots {#plots} 
 
 ### **Description**
 
