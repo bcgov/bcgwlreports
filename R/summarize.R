@@ -96,6 +96,7 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
 
   w_full %>%
     dplyr::right_join(r, by = "Date") %>%
+    dplyr::filter(!is.na(ow)) %>%
     dplyr::left_join(
       dplyr::select(w_hist, "ow", "DayofYear", "quality_hist", "n_years"),
       by = c("ow", "DayofYear")) %>%
