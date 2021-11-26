@@ -104,7 +104,8 @@ well_map <- function(details, format = "html") {
      "<strong>Region</strong>: {.data$region}<br>",
      "<strong>Location</strong>: {.data$location}<br>",
      "<strong>Current percentile</strong>: {.data$percentile}"),
-     tooltip = purrr::map(.data$tooltip, htmltools::HTML))
+     tooltip = purrr::map(.data$tooltip, htmltools::HTML),
+     class = factor(class, levels = perc_values$nice))
 
  perc_pal <- leaflet::colorFactor(perc_values$colour, perc_values$nice)
 
@@ -122,8 +123,8 @@ well_map <- function(details, format = "html") {
                                style = list("font-weight" = "bold",
                                             "font-size" = "12px"))) %>%
    leaflet::addLegend("topright", title = "Groundwater Levels",
-                      pal = perc_pal, values = ~c(perc_values$nice, NA),
-                      na.label = "No current data")
+                      colors = c(perc_values$colour, "#808080"),
+                      labels = c(perc_values$nice, "No current data"))
 }
 
 
