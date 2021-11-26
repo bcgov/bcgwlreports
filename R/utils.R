@@ -47,7 +47,7 @@ find_continuous <- function(w) {
     dplyr::slice(1) %>%
     dplyr::pull(.data$month)
 
-  dplyr::filter(w, .data$Date > !!first_date)
+  dplyr::mutate(w, continuous_data = .data$Date > !!first_date)
 }
 
 perc_match <- function(x, cols = "class") {

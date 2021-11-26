@@ -13,13 +13,16 @@
 # the License.
 
 
-well_prep <- function(ows, water_year_start, report_dates) {
+well_prep <- function(ows, water_year_start, report_dates,
+                      exclude_non_continuous = TRUE) {
   w <- ow_update(ows) %>%
     dplyr::mutate(data = purrr::map(.data$data, well_clean,
                                     water_year_start = !!water_year_start,
                                     report_dates = !!report_dates)) %>%
     tidyr::unnest(.data$data) %>%
     dplyr::select(-"file")
+
+  if(exclude_non_continuous) w <- dplyr::filter(w, continuous_data)
 
   wy <- unique(w$WaterYear[w$Date == max(report_dates)])
 
