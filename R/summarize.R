@@ -57,7 +57,8 @@ well_meta <- function(w) {
   if(is.vector(w)) w <- tibble(ow = !!w)
     w %>%
       dplyr::left_join(well_regions(unique(w$ow)), by = "ow") %>%
-      dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow"))
+      dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow")) %>%
+      dplyr::arrange(.data$region, .data$area, .data$ow)
 }
 
 well_hist <- function(w_full, years_min) {
