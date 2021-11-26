@@ -15,6 +15,8 @@
 #' Compile report
 #'
 #' @param ows Character vector. Observation well numbers (e.g, "OW000")
+#' @param name Character string. Short text to name the file. Will become
+#'   `name_YYYY_MM_DD.html`
 #' @param report_dates Character vector. Two current dates to explore. By
 #'   default a date 2 week ago and 4 weeks before that are used.
 #' @param title Character. Title of the report.
@@ -65,18 +67,19 @@
 #'
 #' @export
 #'
-well_report <- function(ows,
+well_report <- function(ows, name = "report",
                         report_dates = c(Sys.Date() - lubridate::weeks(2),
                                          Sys.Date() - lubridate::weeks(4)),
                         title = NULL, description = NULL, remarks = NULL,
+
                         n_days = 13, years_min = 5, out_dir = ".",
                         cache_age = 7) {
-
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
   check_numeric(cache_age, type = "cache_age", lower = 0)
   check_out_dir(out_dir)
+  check_name(name)
 
   check_title(title)
   description <- check_description(description)
@@ -123,7 +126,7 @@ well_report <- function(ows,
                                   "n_days" = n_days,
                                   "years_min" = years_min),
                     output_dir = out_dir,
-                    output_file = glue::glue("report_{Sys.Date()}.html"))
+                    output_file = glue::glue("{name}_{Sys.Date()}.html"))
 
   # rmarkdown::render(system.file("rmd_report", "report_pdf.Rmd", package = "bcgwlreports"),
   #                   params = list("w_full" = w_full, "w_hist" = w_hist,

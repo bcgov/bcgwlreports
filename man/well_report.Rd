@@ -6,6 +6,7 @@
 \usage{
 well_report(
   ows,
+  name = "report",
   report_dates = c(Sys.Date() - lubridate::weeks(2), Sys.Date() - lubridate::weeks(4)),
   title = NULL,
   description = NULL,
@@ -18,6 +19,9 @@ well_report(
 }
 \arguments{
 \item{ows}{Character vector. Observation well numbers (e.g, "OW000")}
+
+\item{name}{Character string. Short text to name the file. Will become
+\code{name_YYYY_MM_DD.html}}
 
 \item{report_dates}{Character vector. Two current dates to explore. By
 default a date 2 week ago and 4 weeks before that are used.}
