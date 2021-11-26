@@ -33,10 +33,10 @@ perc_values <- dplyr::tribble(
   "p_min",     "Minimum",           "black",     0.99999, 1,       0,         0) %>%
   dplyr::mutate(colour = !!perc_colours)
 
-plot_values <- dplyr::tribble(~ type,     ~ size, ~ colour,
-                              "Working",  0.75,      "red",
-                              "Approved", 0.75,     "black",
-                              "Median",   0.5,      "grey50")
+plot_values <- dplyr::tribble(~ type,     ~ type_current, ~ size, ~ colour,
+                              "Working",  "Current Year Working", 0.75,      "red",
+                              "Approved", "Current Year Approved", 0.75,     "black",
+                              "Median",   "Median", 0.5,      "grey50")
 
 type_values <- dplyr::tribble(
   ~subtype, ~type,                        ~hydraulic_connectivity,
