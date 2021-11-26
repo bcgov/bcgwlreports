@@ -365,23 +365,21 @@ This table lists the original reporting dates, and the actual dates used for eac
 observation well. 
 
 ```{r appendix}
-a <- appendix_dates(w_dates)
-index <- table(a$region)
-
-tbl_a <- a %>%
-  select(- "region") %>%
-  kable(format = "html", align = "llccccc", escape = FALSE) %>%
-  kable_styling(
-    bootstrap_options = "hover", full_width = FALSE, 
-    htmltable_class = "bcgwl-table lightable-classic lightable-hover") %>%
-  row_spec(0, bold = TRUE) %>%
-  add_header_above(c("", "", "", "Report Dates vs. Measurement dates" = 4), 
-                   bold = TRUE)
-
-#if(any(a == ""  | is.na(a))) tbl_a <- kableExtra::footnote(tbl_a, general = glue("<span class = 'footnote'>&bull; {note_no_data}</span>"), escape = FALSE)
-
-tbl_a
-
+w_dates %>%
+  well_meta() %>%
+  dplyr::select("region", "area", "location", "ow", "report_dates", "Date") %>%
+  dplyr::arrange(.data$region, .data$area, .data$location,
+                 .data$ow, dplyr::desc(.data$report_dates)) %>%
+  tidyr::pivot_wider(names_from = "report_dates", values_from = "Date") %>%
+  group_by(region) %>%
+  gt() %>%
+  cols_label("area" = "Area", "location" = "Location Name", 
+             "ow" = "Obs. Well") %>%
+  tab_spanner(label = "Report Datesvs. Measurement Dates", 
+              columns = -c("area", "location", "ow")) %>%
+  text_transform(locations = cells_body(columns = "ow"),
+                 fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
+  gt_bcgwl_style()
 ```
 
 
@@ -390,11 +388,10 @@ tbl_a
 #### General details
 - Water year starts in October
 - Well measurements are all in Depth Below Ground in metres
-- Current Water Year plots show data for the most recent water year with at least
-  1 week of data (7 days).
 
 #### Percentiles
 - Percentiles are calculated individually for each day of the year for each well
+- Percentiles are calculated only with "Approved" data
 - 366 day in leap years is omitted
 - "Good" quality data have 'Approved' historical values for >= `r years_min` years
 - "Poor" quality data have 'Approved' historical values for < `r years_min` 
