@@ -390,19 +390,3 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       "value", "value_last_year",
       "recent_diff")
 }
-
-appendix_dates <- function(w_dates, format = "html") {
-  w_dates %>%
-    well_meta() %>%
-    dplyr::mutate(
-      ow = ow_link(.data$ow, format = format),
-      Value = as.character(round(.data$Value, 2)),
-      Date = dplyr::if_else(is.na(.data$Value),
-                            lubridate::as_date(NA),
-                            .data$Date)) %>%
-    dplyr::arrange(.data$region, .data$area, .data$location,
-                   .data$ow, dplyr::desc(.data$report_dates)) %>%
-    dplyr::select("region", "Area" = "area", "Location Name" = "location",
-                  "Obs.\nWell" = "ow", "report_dates", "Date") %>%
-    tidyr::pivot_wider(names_from = "report_dates", values_from = "Date")
-}

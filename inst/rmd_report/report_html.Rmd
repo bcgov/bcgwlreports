@@ -8,6 +8,7 @@ params:
   description: NULL
   remarks: NULL
   w_full: ""
+  w_full_all: ""
   w_hist: ""
   w_comp: ""
   w_perc: ""

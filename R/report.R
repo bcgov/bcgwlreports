@@ -101,7 +101,11 @@ well_report <- function(ows, name = "report",
   ows <- sort(ows)
 
   message(glue::glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
-  w_full <- well_prep(ows, water_year_start = 10, report_dates)
+
+  w_full_all <- well_prep(ows, water_year_start = 10, report_dates,
+                          exclude_non_continuous = FALSE)
+  w_full <- dplyr::filter(w_full_all, continuous_data)
+
   message("- Summarizing historical statistics")
   w_hist <- well_hist(w_full, years_min)
 
@@ -120,6 +124,7 @@ well_report <- function(ows, name = "report",
                                 package = "bcgwlreports"),
                     params = list("title" = title, "description" = description,
                                   "remarks" = remarks,
+                                  "w_full_all" = w_full_all,
                                   "w_full" = w_full, "w_hist" = w_hist,
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,
