@@ -301,30 +301,41 @@ latest_date <- w_dates %>%
   filter(CurrentYear) #Keep only ones that are in Table 4?
 
 w_meta <- w_dates %>%
-  well_meta()
-for(ow in sort(ows)) {
-  w_meta %>%
-    filter(.data$ow %in% !!ow) %>%
-    select("ow", "region", "location", "type", "hydraulic_connectivity") %>%
-    distinct() %>%
-    mutate(ow = ow_fish(ow)) %>%
-    glue_data("\n\n\n### {ow}\n\n",
-              "[Map](#map)<br>",
-              "<strong>Region:</strong> {region}<br>\n",
-              "<strong>Location:</strong> {location}<br>\n",
-              "<strong>Aquifer type:</strong> {type}<br>\n",
-              "<strong>Hydraulic_connectivity:</strong> ",
-              "{hydraulic_connectivity}<p>\n\n") %>%
+  well_meta() %>%
+  select(ow, "aquifer_id", "region", "area", "location", "location_long", 
+         "subtype", "type", "hydraulic_connectivity") %>%
+  distinct() %>%
+  arrange(.data$region, .data$ow)
+
+for(r in unique(w_meta$region)) {
+  
+  glue("\n\n\n### {r} {{.tabset}}\n\n") %>%
     cat()
-  full <- filter(w_full, ow == !!ow)
-  hist <- filter(w_hist, ow == !!ow)
-  date <- filter(latest_date, ow == !!ow)
   
-  g1 <- well_plot_perc(full, hist, date, years_min)
-  g2 <- well_plot_hist(full, hist)
-  
-  g <- g1 / g2
-  print(g)
+  for(ow in w_meta$ow[w_meta$region == r]) {
+    
+    w_meta %>%
+      filter(.data$ow %in% !!ow) %>%
+      select("ow", "location_long", "type", "hydraulic_connectivity") %>%
+      distinct() %>%
+      mutate(ow = ow_fish(ow)) %>%
+      glue_data("\n\n\n#### {ow}\n\n",  # Map title e.g., OW008
+                "**{location_long}** | **[Map](#map)**   \n",
+                "**{type} aquifer** | ",
+                "**{stringr::str_to_sentence(hydraulic_connectivity)} ",
+                "hydraulically connected**\n\n") %>%
+      cat()
+    full <- filter(w_full, ow == !!ow)
+    full_all <- filter(w_full_all, ow == !!ow)
+    hist <- filter(w_hist, ow == !!ow)
+    date <- filter(latest_date, ow == !!ow)
+    
+    g1 <- well_plot_perc(full, hist, date, years_min, water_year = wy)
+    g2 <- well_plot_hist(full_all, hist)
+    
+    g <- g1 / g2
+    print(g)
+  }
 }
 ```
 
