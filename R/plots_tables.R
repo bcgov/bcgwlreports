@@ -139,34 +139,36 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
                    legend.spacing = ggplot2::unit(1, "pt")) +
     ggplot2::scale_y_reverse() +
     ggplot2::scale_x_date(expand = c(0, 0)) +
-    ggplot2::scale_size_manual(
-      values = stats::setNames(plot_values$size, plot_values$type)) +
     ggplot2::scale_fill_manual(
       values = stats::setNames(p_values$colour, p_values$nice)) +
-    ggplot2::labs(x = "Day of Year", y = "Water Level (mbgs)", subtitle = title)
+    ggplot2::labs(x = "Day of Year",
+                  y = "Water Level Below Ground (metres)", subtitle = title)
 
   if(!is.na(caption)) g <- g + ggplot2::labs(caption = caption)
   g
 }
 
 well_plot_perc <- function(full, hist, latest_date = NULL,
-                           years_min, legend = "right") {
+                           years_min, water_year, legend = "right") {
 
-  year <- full %>%
-    dplyr::filter(!is.na(.data$Value)) %>%
-    dplyr::count(.data$WaterYear) %>%
-    dplyr::filter(.data$n >= 7) %>%   # Must have at least one week of data
-    dplyr::slice(dplyr::n()) %>%
-    dplyr::pull(.data$WaterYear)
+  # Change names for approval
+  full <- full %>%
+    dplyr::mutate(Approval = factor(
+      .data$Approval,
+      levels = c("Median", "Approved", "Working"),
+      labels = c("Median", "Current Year Approved", "Current Year Working")))
 
   # Get current and previous year
-  recent <- dplyr::filter(full, .data$WaterYear == !!year)
+  recent <- dplyr::filter(full, .data$WaterYear == !!water_year)
 
-  lastyear <- dplyr::filter(full, .data$WaterYear == !!year - 1) %>%
+  lastyear <- dplyr::filter(full, .data$WaterYear == !!water_year - 1) %>%
     # Fake the year to plot on top
-    dplyr::mutate(Date = dplyr::if_else(.data$WaterYear == !!year - 1,
+    dplyr::mutate(Date = dplyr::if_else(.data$WaterYear == !!water_year - 1,
                                         .data$Date + lubridate::years(1),
                                         .data$Date))
+
+  title <- glue::glue("Annual Hydrograph – Water Year ",
+                      "[{water_year - 1} - {water_year}]")
 
   if(nrow(recent) > 0) {
     origin <- min(recent$Date[recent$DayofYear == 1] - lubridate::days(1))
@@ -178,12 +180,7 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
 
     data <- dplyr::select(recent, "Date", "Approval", "Value") %>%
       dplyr::bind_rows(dplyr::select(hist, "Date", "Approval",
-                                     "Value" = "median")) %>%
-      dplyr::mutate(Approval = factor(
-        .data$Approval, levels = c("Median", "Approved", "Working")))
-
-    title <- glue_collapse(unique(recent$CalendarYear), ' - ')
-    title <- glue::glue("Water Year {title}")
+                                     "Value" = "median"))
 
     range_name <- glue::glue("Historical range of min & max ",
                              "({hist$start_year[1]} - {hist$end_year[1]})")
@@ -195,7 +192,6 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
       caption <- glue::glue("Percentiles skipped for some dates with ",
                             "less than {years_min} years of data.")
     }
-
 
     p <- well_plots_base(title = title, legend = legend, caption = caption) +
       ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 14))
@@ -229,8 +225,10 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
           fill = "black")
     }
     p +
+      ggplot2::scale_size_manual(
+        values = stats::setNames(plot_values$size, plot_values$type_current)) +
       ggplot2::scale_colour_manual(
-        values = stats::setNames(plot_values$colour, plot_values$type)) +
+        values = stats::setNames(plot_values$colour, plot_values$type_current)) +
       ggplot2::scale_shape_manual(values = 21) +
       ggplot2::guides(shape = guide_legend(order = 1),
                       fill = guide_legend(order = 2),
@@ -238,7 +236,7 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
                       linetype = guide_legend(order = 4), size = "none")
 
   } else {
-    well_plots_base() +
+    well_plots_base(title = title) +
       ggplot2::theme(axis.text = ggplot2::element_blank(),
                      axis.ticks = ggplot2::element_blank()) +
       ggplot2::annotate(geom = "text", x = Sys.Date(), y = 1, label = "No Data")
@@ -247,15 +245,17 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
 
 well_plot_hist <- function(full, hist, legend = "right") {
 
-  well_plots_base(title = "Historical Record", legend = legend) +
-    ggplot2::geom_line(data = full,
-                       ggplot2::aes_string(x = "Date", y = "Value",
-                                           colour = "Approval"),
-                       na.rm = TRUE) +
+  title <- dplyr::filter(full, !is.na(Value)) %>%
+    dplyr::summarize(min = min(Date), max = max(Date)) %>%
+    glue::glue_data("Historical Record - {min} to {max}")
+
+  well_plots_base(title = title, legend = legend) +
     ggplot2::geom_point(data = full,
                         ggplot2::aes_string(x = "Date", y = "Value",
                                             colour = "Approval"),
                         na.rm = TRUE) +
+    ggplot2::scale_size_manual(
+      values = stats::setNames(plot_values$size[1:2], plot_values$type[1:2])) +
     ggplot2::scale_colour_manual(
       values = stats::setNames(plot_values$colour[1:2], plot_values$type[1:2]))
 }
