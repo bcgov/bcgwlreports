@@ -68,7 +68,12 @@ check_description <- function(description) {
     }
 
     d <- try(readr::read_lines(description), silent = TRUE)
-    if("try-error" %in% class(d)) d <- description
+    if("try-error" %in% class(d)) {
+      d <- description
+      message("Can't find 'description' as file ('",
+              stringr::str_trunc("title.txt", 20),
+              "'), assuming text, not file")
+    }
   } else d <- NULL
   d
 }
@@ -87,9 +92,10 @@ check_dates <- function(report_dates, n_days) {
     stop("report_dates must be valid dates YYYY-MM-DD", call. = FALSE)
   } else if (any(report_dates > Sys.Date())) {
     stop("Cannot calculate reports for future dates", call. = FALSE)
-  } else if (length(report_dates) != 2) {
-    stop("Can only use two current dates (for now)", call. = FALSE)
-  } else if(min(report_dates) + lubridate::days(n_days) >= max(report_dates)){
+  } else if (length(report_dates) > 2) {
+    stop("Can only use two or fewer current dates (for now)", call. = FALSE)
+  } else if(length(report_dates) > 1 &&
+            (min(report_dates) + lubridate::days(n_days) >= max(report_dates))){
     stop("Range over which to look for data ('n_days') cannot overlap both ",
          "report dates.\nEither make 'n_days' smaller or select two report dates ",
          "farther apart.", call. = FALSE)
@@ -110,6 +116,8 @@ check_out_dir <- function(out_dir) {
 
 
 check_remarks <- function(remarks, ows) {
+
+  if(is.null(remarks)) return(remarks)
 
   # Data frame or file?
   if(!is.data.frame(remarks)) {
@@ -145,3 +153,11 @@ check_remarks <- function(remarks, ows) {
 
   remarks
 }
+
+check_name <- function(name) {
+  if(!is.character(name)) stop("'name' should be text", call. = FALSE)
+  if(stringr::str_length(name) > 100) {
+    stop("'name' is too long (longer than 100 characters)", call. = FALSE)
+  }
+}
+
