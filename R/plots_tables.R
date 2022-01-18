@@ -96,13 +96,13 @@ well_map <- function(details, format = "html") {
    dplyr::mutate(
      percentile = if_else(is.na(percentile),
                           glue("No current data"),
-                          glue("{percentile}%"))) %>%
+                          glue("{percentile}"))) %>%
    sf::st_transform(4326) %>%
    dplyr::left_join(region_names, by = "ow") %>%
    dplyr::mutate(tooltip = glue::glue(
      "<strong>Well</strong>: {ow_link(ow_fish(.data$ow), format = format)}<br>",
      "<strong>Region</strong>: {.data$region}<br>",
-     "<strong>Location</strong>: {.data$location}<br>",
+     "<strong>Location</strong>: {.data$location_long}<br>",
      "<strong>Current percentile</strong>: {.data$percentile}"),
      tooltip = purrr::map(.data$tooltip, htmltools::HTML),
      class = factor(class, levels = perc_values$nice))
