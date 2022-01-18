@@ -41,6 +41,10 @@ body {
   margin: auto;
 }
 
+summary {
+  padding-bottom:10px;
+}
+
 .bcgwl-table {
   color: black;
   border-top: 2px solid black;
@@ -233,8 +237,8 @@ t %>%
 
 ## Latest Details {#details}
 
-<details>
-  <summary>Show</summary>
+<details open>
+  <summary>Show/Hide</summary>
 
 **Latest details on observation wells in Water Year `r wy-1` - `r wy`**
 
