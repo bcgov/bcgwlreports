@@ -214,7 +214,16 @@ ow_read <- function(file, ow) {
   well_loc <- dplyr::if_else(stringr::str_detect(file, 'http'), 'online', 'local')
   message(glue::glue("   - {ow} ({well_loc})"))
 
-  d <- readr::read_csv(file, col_types = "Tncc", progress = FALSE)
+  d <- try(readr::read_csv(file, col_types = "Tncc", progress = FALSE), silent = TRUE)
+
+  # Try again if errors
+  if("try-error" %in% class(d)){
+    d <- try(readr::read_csv(file, col_types = "Tncc", progress = FALSE), silent = TRUE)
+    if("try-error" %in% class(d)){
+      stop("Problem downloading well ", ow, ". Please try again!", call. = FALSE)
+    }
+  }
+
   if(well_loc == "online") {
     readr::write_csv(d, glue::glue("{data_cache()}/ow/{ow}_{Sys.Date()}.csv"))
   }
