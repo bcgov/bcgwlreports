@@ -107,7 +107,7 @@ well_map <- function(details, format = "html") {
      tooltip = purrr::map(.data$tooltip, htmltools::HTML),
      class = factor(class, levels = perc_values$nice))
 
- perc_pal <- leaflet::colorFactor(perc_values$colour, perc_values$nice)
+ perc_pal <- leaflet::colorFactor(perc_values$colour, levels = perc_values$nice)
 
  regions <- data_load("regions") %>%
    sf::st_transform(4326)
