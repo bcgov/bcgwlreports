@@ -117,9 +117,6 @@ This report was generated on `r format(Sys.Date(), "%B %d, %Y")`.
 
 ## Background {#background}
 
-<details>
-  <summary>Show</summary>
-
 The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.
 
 The following summaries compare recent groundwater levels to historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all years of data.
@@ -141,46 +138,19 @@ In general, a groundwater level value that is:
 * the lowest ever measured for the day of year is considered
   <span style="color: `r perc_values$colour[7]`;">**Low**</span>.
 
-</details>
+## Groundwater Level Conditions {#map}
 
-## Groundwater Levels Map {#map}
 
-```{r wells_map}
+```{r wells_map)}
 details <- well_table_summary(w_dates, w_hist, perc_values)
 well_map(details)
 ```
 
-**Notes:**
+<center> **Note:** `r emo::ji("fish")` = likely hydraulically connected </center>
 
-`r emo::ji("fish")` = Likely hydraulically connected
+<br>
 
-
-## Wells Below Normal {#wells-below-normal .tabset}
-
-### **Description**
-
-This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison.
-
-### All Wells
-
-
-```{r wells_below_normal_overall}
-t <- well_table_below_norm(w_perc, window, which = "totals")
-
-# Get footnotes needed
-missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
-missing_data <- any(t == "" | is.na(t))
-t %>%
-  rename_with(~str_remove(., "\\*")) %>%
-  gt() %>%
-  tab_spanner(label = "Current Year", columns = !!range1) %>%
-  tab_spanner(label = "Last Year", columns = !!range2) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
-  gt_bcgwl_style()
-```
-
-
-### By Percentile Classes
+<font size="4"> <center> **Wells by Percentile Class** </center>  </font> 
 
 ```{r percentile_class}
 t <- well_table_status(w_perc, perc_values, window)
@@ -196,10 +166,30 @@ t %>%
   cols_align("center") %>%
   tab_spanner(label = "Current Year", columns = 1 + !!range1) %>%
   tab_spanner(label = "Last Year", columns = 1 + !!range2) %>%
-  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  #footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
   gt_bcgwl_style()
 ```
 
+## Wells Below Normal {#wells-below-normal .tabset}
+
+This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.
+
+### All Wells
+
+```{r wells_below_normal_overall}
+t <- well_table_below_norm(w_perc, window, which = "totals")
+
+# Get footnotes needed
+missing_dates <- str_subset(names(t), "\\*") %>% str_remove("\\*")
+missing_data <- any(t == "" | is.na(t))
+t %>%
+  rename_with(~str_remove(., "\\*")) %>%
+  gt() %>%
+  tab_spanner(label = "Current Year", columns = !!range1) %>%
+  tab_spanner(label = "Last Year", columns = !!range2) %>%
+  footnotes_below_normal(missing_dates, missing_data, n_days = n_days) %>%
+  gt_bcgwl_style()
+```
 
 ### By Hydraulic Connectivity
 
@@ -241,7 +231,7 @@ t %>%
 ```
 
 
-## Observation Well Latest Details {#details}
+## Latest Details {#details}
 
 <details>
   <summary>Show</summary>
