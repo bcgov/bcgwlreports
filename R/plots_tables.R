@@ -90,20 +90,32 @@ footnotes_below_normal <- function(gt, missing_dates, missing_data, n_days = NUL
 
 well_map <- function(details, format = "html") {
 
+  n_regions <- length(unique(details$region))
+
  locs <- data_load("wells_sf") %>%
    dplyr::right_join(dplyr::select(details, "ow", "class", "percentile"),
                      by = "ow") %>%
    dplyr::mutate(
-     percentile = if_else(is.na(percentile),
-                          glue("No current data"),
-                          glue("{percentile}"))) %>%
+     percentile = dplyr::if_else(
+       is.na(percentile),
+       glue::glue("No current data"),
+       glue::glue("{percentile}"))) %>%
    sf::st_transform(4326) %>%
    dplyr::left_join(region_names, by = "ow") %>%
-   dplyr::mutate(tooltip = glue::glue(
-     "<strong>Well</strong>: {ow_link(ow_fish(.data$ow), format = format)}<br>",
-     "<strong>Region</strong>: {.data$region}<br>",
-     "<strong>Location</strong>: {.data$location_long}<br>",
-     "<strong>Current percentile</strong>: {.data$percentile}"),
+   dplyr::mutate(ow_tt = ow_fish(.data$ow))
+
+ # If multiple regions, don't link OWs to plots
+ if(n_regions == 1) {
+   locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow_tt, format = format))
+ }
+
+ locs <- locs %>%
+   dplyr::mutate(
+     tooltip = glue::glue(
+       "<strong>Well</strong>: {.data$ow_tt}<br>",
+       "<strong>Region</strong>: {.data$region}<br>",
+       "<strong>Location</strong>: {.data$location_long}<br>",
+       "<strong>Current percentile</strong>: {.data$percentile}"),
      tooltip = purrr::map(.data$tooltip, htmltools::HTML),
      class = factor(class, levels = perc_values$nice))
 

@@ -3,6 +3,7 @@ output:
   html_document:
     toc: true
     toc_float: true
+    toc_depth: 4
 params: 
   title: NULL
   description: NULL
@@ -238,59 +239,71 @@ t %>%
 ```
 
 
-## Latest Details {#details}
 
-<details open>
-  <summary>Show/Hide</summary>
+## Latest Details {#details .tabset}
 
 **Latest details on observation wells in Water Year `r wy-1` - `r wy`**
 
-```{r well_summaries}
+
+
+```{r well_summaries, results = "asis"}
 foot1 <- "n is the number of years included in the percentile calculation."
 foot2 <- "Values with an Approval Status of ‘Working’"
 
-groups <- c("region", "area")
-if(length(unique(details$region)) == 1) groups <- c("area")
+for(r in unique(details$region)) {
+  
+  if(length(unique(details$region)) > 1) {
+    glue("\n\n\n### {r}\n\n",
+         "<details open>\n\n<summary>Show/Hide</summary>\n\n") %>%
+      cat()
+  } else {
+    cat("\n\n<details open>\n\n<summary>Show/Hide</summary>\n\n")
+  }
+  
+  details %>%
+    mutate(percentile = if_else(
+      !is.na(percentile), 
+      glue("{class} ({percentile}%)<br><small>(n = {n_years})</small>"),
+      glue("(n = {n_years})")),
+      percentile = purrr::map(percentile, html)) %>%
+    filter(region == r) %>%
+    select(area, location, ow, hydraulic_connectivity, 
+           aquifer_type, date, percentile, class, approval) %>%
+    left_join(remarks, by = "ow") %>%
+    group_by(.data$area) %>%
+    gt() %>%
+    cols_hide(c("approval", "class")) %>%
+    cols_label("location" = "Location",
+               "hydraulic_connectivity" = "Hydraulic Connection", 
+               "aquifer_type" = "Aquifer Type",
+               "date" = "Latest Date" , 
+               "percentile" = "Percentile",
+               "ow" = "Obs. Well", 
+               "remarks" = "Remarks") %>%
+    cols_align("center", columns = "ow") %>%
+    gt_perc_colours() %>%
+    fmt_missing(everything(), missing_text = "") %>%
+    tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
+    tab_footnote(foot2, locations = cells_body(columns = "date", 
+                                               rows = approval == "Working")) %>%
+    opt_footnote_marks(marks = c("a", "\u2731")) %>%
+    text_transform(locations = cells_body(columns = "ow"),
+                   fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
+    cols_align("left", columns = "remarks") %>%
+    gt_bcgwl_style() %>%
+    knitr::knit_print() %>%
+    cat()
 
-details %>%
-  mutate(percentile = if_else(
-    !is.na(percentile), 
-    glue("{class} ({percentile}%)<br><small>(n = {n_years})</small>"),
-    glue("(n = {n_years})")),
-    percentile = purrr::map(percentile, html)) %>%
-  select(region, area, location, ow, hydraulic_connectivity, 
-         aquifer_type, date, percentile, class, approval) %>%
-  left_join(remarks, by = "ow") %>%
-  group_by(across(all_of(groups))) %>%
-  gt() %>%
-  cols_hide(c("approval", "class")) %>%
-  cols_label("location" = "Location",
-             "hydraulic_connectivity" = "Hydraulic Connection", 
-             "aquifer_type" = "Aquifer Type",
-             "date" = "Latest Date" , 
-             "percentile" = "Percentile",
-             "ow" = "Obs. Well", 
-             "remarks" = "Remarks") %>%
-  cols_align("center", columns = "ow") %>%
-  gt_perc_colours() %>%
-  fmt_missing(everything(), missing_text = "") %>%
-  tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
-  tab_footnote(foot2, locations = cells_body(columns = "date", 
-                                             rows = approval == "Working")) %>%
-  opt_footnote_marks(marks = c("a", "\u2731")) %>%
-  text_transform(locations = cells_body(columns = "ow"),
-                 fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
-  cols_align("left", columns = "remarks") %>%
-  gt_bcgwl_style()
+  cat("</details>")
+}
 ```
 
 
-</details>
 
 
-## Historical Water Level Plots {#plots} 
+## Historical Water Level Plots {#plots .tabset} 
 
-### **Description**
+**Description**
 
 Annual hydrographs and historical records for the observation wells summarized above can be found in this section.
 
@@ -314,8 +327,10 @@ w_meta <- w_dates %>%
 
 for(r in unique(w_meta$region)) {
   
-  glue("\n\n\n### {r} {{.tabset}}\n\n") %>%
-    cat()
+  if(length(unique(w_meta$region)) > 1) {
+    glue("\n\n\n### {r}\n\n") %>%
+      cat()
+  }
   
   for(ow in w_meta$ow[w_meta$region == r]) {
     
@@ -372,7 +387,7 @@ w_dates %>%
   gt() %>%
   cols_label("area" = "Area", "location" = "Location Name", 
              "ow" = "Obs. Well") %>%
-  tab_spanner(label = "Report Datesvs. Measurement Dates", 
+  tab_spanner(label = "Report Dates vs. Measurement Dates", 
               columns = -c("area", "location", "ow")) %>%
   text_transform(locations = cells_body(columns = "ow"),
                  fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
