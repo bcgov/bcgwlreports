@@ -28,14 +28,17 @@ ow_link <- function(ow, format) {
     tolower()
   if(format == "pdf") ow <- glue::glue("\\hyperref[{ow_ref}]{{{ow}}}")
   if(format == "html") ow <- glue::glue("<a href = '#{ow_ref}'>{ow}</a>")
+  ow
 }
 
 ow_fish <- function(ow) {
   well_meta(ow) %>%
-    dplyr::mutate(ow = if_else(.data$hydraulic_connectivity == "Likely",
-                               as.character(paste(.data$ow, emo::ji("fish"))),
-                               .data$ow)) %>%
-    dplyr::pull(ow)
+    dplyr::mutate(ow_fish = dplyr::if_else(
+      .data$hydraulic_connectivity == "Likely",
+      as.character(paste(.data$ow, emo::ji("fish"))),
+      .data$ow)) %>%
+    dplyr::slice(match(!!ow, .data$ow)) %>% # Sort back to original order!
+    dplyr::pull(ow_fish)
 }
 
 find_continuous <- function(w) {
