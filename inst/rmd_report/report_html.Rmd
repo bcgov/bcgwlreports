@@ -16,6 +16,8 @@ params:
   report_dates: ""
   n_days: ""
   years_min: ""
+  cache_report: ""
+  cache.dir: ""
 title: "`r if(!is.null(params$title)) params$title else 'Observation Wells Groundwater Levels'`"
 ---
 
@@ -79,9 +81,10 @@ library(lubridate)
 library(stringr)
 library(patchwork)
 
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache.dir = params$cache.dir)
 options(knitr.kable.NA = '')
 
+w_full_all <- params$w_full_all
 w_full <- params$w_full
 w_hist <- params$w_hist
 w_comp <- params$w_comp
@@ -295,7 +298,7 @@ Current conditions for provincial groundwater observation wells can be accessed 
 
 Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as 'Working' and what will become the official record.
 
-```{r plots, results = "asis", fig.asp = 0.9, fig.width = 10}
+```{r plots, results = "asis", fig.asp = 0.9, fig.width = 10, cache = params$cache_report, cache.extra = w_full_all}
 latest_date <- w_dates %>% 
   group_by(ow) %>% 
   filter(!is.na(Value)) %>%

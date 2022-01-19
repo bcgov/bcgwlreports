@@ -32,10 +32,10 @@
 #'   percentiles
 #' @param out_dir Character. Location of output report. Defaults to working
 #'   directory.
-#' @param cache_age Logical. Maxmum age in days of cached datasets (not obs well
+#' @param cache_age Logical. Maximum age in days of cached datasets (not obs well
 #'   data, but metadata related to regional maps, aquifer and wells).
-#'
-#'
+#' @param cache_report Logical. Whether or not to use a cache for the report plots.
+#'   Permits faster runs when tweaking details.
 #' @details `remarks` can be a file path to a TSV (tab-separated) text file or
 #'   Excel file contain columns 'ow' and 'remarks', or it can be a
 #'   `data.frame()`/`tibble()` (see examples) containing the same. Note that CSV
@@ -71,9 +71,8 @@ well_report <- function(ows, name = "report",
                         report_dates = c(Sys.Date() - lubridate::weeks(2),
                                          Sys.Date() - lubridate::weeks(4)),
                         title = NULL, description = NULL, remarks = NULL,
-
                         n_days = 13, years_min = 5, out_dir = ".",
-                        cache_age = 7) {
+                        cache_age = 7, cache_report = TRUE) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
@@ -129,7 +128,9 @@ well_report <- function(ows, name = "report",
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,
                                   "n_days" = n_days,
-                                  "years_min" = years_min),
+                                  "years_min" = years_min,
+                                  "cache_report" = cache_report,
+                                  "cache.dir" = out_dir),
                     output_dir = out_dir,
                     output_file = glue::glue("{name}_{Sys.Date()}.html"))
 
