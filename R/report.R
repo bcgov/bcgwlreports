@@ -72,7 +72,7 @@ well_report <- function(ows, name = "report",
                                          Sys.Date() - lubridate::weeks(4)),
                         title = NULL, description = NULL, remarks = NULL,
                         n_days = 13, years_min = 5, out_dir = ".",
-                        cache_age = 7, cache_report = TRUE) {
+                        cache_age = 7) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
@@ -103,7 +103,7 @@ well_report <- function(ows, name = "report",
 
   w_full_all <- well_prep(ows, water_year_start = 10, report_dates,
                           exclude_non_continuous = FALSE)
-  w_full <- dplyr::filter(w_full_all, continuous_data)
+  w_full <- dplyr::filter(w_full_all, .data$continuous_data)
 
   message("- Summarizing historical statistics")
   w_hist <- well_hist(w_full, years_min)
@@ -128,11 +128,10 @@ well_report <- function(ows, name = "report",
                                   "w_comp" = w_hist, "w_perc" = w_perc,
                                   "w_dates" = w_dates, "report_dates" = report_dates,
                                   "n_days" = n_days,
-                                  "years_min" = years_min,
-                                  "cache_report" = cache_report,
-                                  "cache.dir" = out_dir),
+                                  "years_min" = years_min),
                     output_dir = out_dir,
-                    output_file = glue::glue("{name}_{Sys.Date()}.html"))
+                    output_file = glue::glue("{name}_{Sys.Date()}.html"),
+                    quiet = TRUE)
 
   # rmarkdown::render(system.file("rmd_report", "report_pdf.Rmd", package = "bcgwlreports"),
   #                   params = list("w_full" = w_full, "w_hist" = w_hist,

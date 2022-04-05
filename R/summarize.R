@@ -22,7 +22,7 @@ well_prep <- function(ows, water_year_start, report_dates,
     tidyr::unnest(.data$data) %>%
     dplyr::select(-"file")
 
-  if(exclude_non_continuous) w <- dplyr::filter(w, continuous_data)
+  if(exclude_non_continuous) w <- dplyr::filter(w, .data$continuous_data)
 
   wy <- unique(w$WaterYear[w$Date == max(report_dates)])
 
@@ -54,7 +54,7 @@ well_clean <- function(w, water_year_start, report_dates) {
 
 
 well_meta <- function(w) {
-  if(is.vector(w)) w <- tibble(ow = !!w)
+  if(is.vector(w)) w <- dplyr::tibble(ow = !!w)
     w %>%
       dplyr::left_join(well_regions(unique(w$ow)), by = "ow") %>%
       dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow")) %>%
@@ -96,7 +96,7 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
 
   w_full %>%
     dplyr::right_join(r, by = "Date") %>%
-    dplyr::filter(!is.na(ow)) %>%
+    dplyr::filter(!is.na(.data$ow)) %>%
     dplyr::left_join(
       dplyr::select(w_hist, "ow", "DayofYear", "quality_hist", "n_years"),
       by = c("ow", "DayofYear")) %>%

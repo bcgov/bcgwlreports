@@ -4,6 +4,10 @@ output:
     html_preview: true
 ---
 
+<!-- badges: start -->
+  [![Codecov test coverage](https://codecov.io/gh/bcgov/bcgwlreports/branch/main/graph/badge.svg)](https://app.codecov.io/gh/bcgov/bcgwlreports?branch=main)
+  <!-- badges: end -->
+
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

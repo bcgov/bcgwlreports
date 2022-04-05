@@ -12,55 +12,56 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-gt_perc_colours <- function(gt, perc_col = "percentile") {
+gt_perc_colours <- function(gtable, perc_col = "percentile") {
 
   if(perc_col == "stub") {
     for(i in seq_len(nrow(perc_values)))
-      gt <- gt %>%
-        tab_style(style = list(cell_fill(perc_values$colour[i]),
-                               cell_text(perc_values$txt_colour[i])),
-                  locations = cells_stub(rows = i))
+      gtable <- gtable %>%
+        gt::tab_style(style = list(gt::cell_fill(perc_values$colour[i]),
+                                   gt::cell_text(perc_values$txt_colour[i])),
+                      locations = gt::cells_stub(rows = i))
   } else {
     for(i in seq_len(nrow(perc_values))) {
-      gt <- gt %>%
-        tab_style(style = list(cell_fill(perc_values$colour[i]),
-                               cell_text(perc_values$txt_colour[i])),
-                  locations = cells_body(rows = class == perc_values$nice[i],
-                                         columns = perc_col))
+      gtable <- gtable %>%
+        gt::tab_style(style = list(gt::cell_fill(perc_values$colour[i]),
+                                   gt::cell_text(perc_values$txt_colour[i])),
+                      locations = gt::cells_body(rows = class == perc_values$nice[i],
+                                                 columns = perc_col))
     }
   }
-  gt
+  gtable
 }
 
 
-gt_bcgwl_style <- function(gt) {
-  gt %>%
-    tab_style(style = cell_text(weight = "bold", size = "large"),
-              locations = cells_column_labels()) %>%
-    tab_style(style = cell_text(weight = "bold", size = "large"),
-              locations = cells_column_spanners()) %>%
-    tab_style(style = cell_text(weight = "bold"),
-              locations = cells_row_groups()) %>%
-    tab_style(style = cell_text(color = "#666666"),
-              locations = cells_footnotes()) %>%
-    tab_options(table_body.hlines.width = 0,
-                data_row.padding = px(5),
-                footnotes.padding = px(2),
-                table.border.top.color = "black",
-                table.border.top.width = px(3),
-                table.border.bottom.color = "black",
-                table_body.border.top.color = "black",
-                table_body.border.bottom.color = "black",
-                stub.border.width = 0)
+gt_bcgwl_style <- function(gtable) {
+  gtable %>%
+    gt::tab_style(style = gt::cell_text(weight = "bold", size = "large"),
+                  locations = gt::cells_column_labels()) %>%
+    gt::tab_style(style = gt::cell_text(weight = "bold", size = "large"),
+                  locations = gt::cells_column_spanners()) %>%
+    gt::tab_style(style = gt::cell_text(weight = "bold"),
+                  locations = gt::cells_row_groups()) %>%
+    gt::tab_style(style = gt::cell_text(color = "#666666"),
+                  locations = gt::cells_footnotes()) %>%
+    gt::tab_options(table_body.hlines.width = 0,
+                    data_row.padding = gt::px(5),
+                    footnotes.padding = gt::px(2),
+                    table.border.top.color = "black",
+                    table.border.top.width = gt::px(3),
+                    table.border.bottom.color = "black",
+                    table_body.border.top.color = "black",
+                    table_body.border.bottom.color = "black",
+                    stub.border.width = 0)
 }
 
-footnotes_below_normal <- function(gt, missing_dates, missing_data, n_days = NULL) {
-  foot1 <- glue("(X/Y) indicates X wells with low values out of Y wells ",
+footnotes_below_normal <- function(gt, missing_dates, missing_data,
+                                   n_days = NULL) {
+  foot1 <- glue::glue("(X/Y) indicates X wells with low values out of Y wells ",
                 "total for that date")
   foot2 <- "Blank cells indicate no data"
-  foot3 <- glue("Not all reporting dates had data. Includes values ",
-                "obtained from a {n_days*2 + 1}-day window centred on the ",
-                "reporting date")
+  foot3 <- glue::glue("Not all reporting dates had data. Includes values ",
+                      "obtained from a {n_days*2 + 1}-day window centred on the ",
+                      "reporting date")
 
   # First foot
   gt <- gt::tab_footnote(gt, footnote = foot1,
@@ -77,14 +78,14 @@ footnotes_below_normal <- function(gt, missing_dates, missing_data, n_days = NUL
   if(length(missing_dates) > 0) {
     gt <- gt::tab_footnote(
       gt, footnote = foot3,
-      locations = gt::cells_column_labels(all_of(missing_dates)))
-    marks <- c(marks, "\u2731")
+      locations = gt::cells_column_labels(dplyr::all_of(missing_dates)))
+    marks <- c(marks, "\\u2731")
   }
 
   # Needs at least two to use custom marks
   if(length(marks) == 1) marks <- c(marks, "")
 
-  opt_footnote_marks(gt, marks = marks)
+  gt::opt_footnote_marks(gt, marks = marks)
 }
 
 
@@ -97,7 +98,7 @@ well_map <- function(details, format = "html") {
                      by = "ow") %>%
    dplyr::mutate(
      percentile = dplyr::if_else(
-       is.na(percentile),
+       is.na(.data$percentile),
        glue::glue("No current data"),
        glue::glue("{percentile}"))) %>%
    sf::st_transform(4326) %>%
@@ -116,7 +117,7 @@ well_map <- function(details, format = "html") {
        "<strong>Region</strong>: {.data$region}<br>",
        "<strong>Location</strong>: {.data$location_long}<br>",
        "<strong>Current percentile</strong>: {.data$percentile}"),
-     tooltip = purrr::map(.data$tooltip, htmltools::HTML),
+     tooltip = purrr::map(.data$tooltip, gt::html),
      class = factor(class, levels = perc_values$nice))
 
  perc_pal <- leaflet::colorFactor(perc_values$colour, levels = perc_values$nice)
@@ -242,10 +243,10 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
       ggplot2::scale_colour_manual(
         values = stats::setNames(plot_values$colour, plot_values$type_current)) +
       ggplot2::scale_shape_manual(values = 21) +
-      ggplot2::guides(shape = guide_legend(order = 1),
-                      fill = guide_legend(order = 2),
-                      colour = guide_legend(order = 3),
-                      linetype = guide_legend(order = 4), size = "none")
+      ggplot2::guides(shape = ggplot2::guide_legend(order = 1),
+                      fill = ggplot2::guide_legend(order = 2),
+                      colour = ggplot2::guide_legend(order = 3),
+                      linetype = ggplot2::guide_legend(order = 4), size = "none")
 
   } else {
     well_plots_base(title = title) +
@@ -257,8 +258,8 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
 
 well_plot_hist <- function(full, hist, legend = "right") {
 
-  title <- dplyr::filter(full, !is.na(Value)) %>%
-    dplyr::summarize(min = min(Date), max = max(Date)) %>%
+  title <- dplyr::filter(full, !is.na(.data$Value)) %>%
+    dplyr::summarize(min = min(.data$Date), max = max(.data$Date)) %>%
     glue::glue_data("Historical Record - {min} to {max}")
 
   well_plots_base(title = title, legend = legend) +
@@ -277,13 +278,15 @@ well_table_overview <- function(w_dates, format = "html") {
   w_dates %>%
     well_meta() %>%
     dplyr::mutate(
-      ow = ow_link(.data$ow, format = format),
+      ow = ow_link(.data$ow, format = !!format),
       Value = as.character(round(.data$Value, 2)),
-      Value = dplyr::if_else(.data$Date != .data$report_dates & !is.na(.data$Value),
-                             as.character(glue::glue("{.data$Value}*")),
-                             .data$Value)) %>%
-    dplyr::arrange(.data$area, .data$location, .data$ow, dplyr::desc(.data$Date)) %>%
-    dplyr::select("region", "Area" = "area", "Location Name" = location,
+      Value = dplyr::if_else(
+        .data$Date != .data$report_dates & !is.na(.data$Value),
+        as.character(glue::glue("{.data$Value}*")),
+        .data$Value)) %>%
+    dplyr::arrange(.data$area, .data$location, .data$ow,
+                   dplyr::desc(.data$Date)) %>%
+    dplyr::select("region", "Area" = "area", "Location Name" = "location",
                   "Obs.\nWell" = "ow", "Value", "report_dates") %>%
     tidyr::pivot_wider(names_from = "report_dates", values_from = "Value")
 }
@@ -357,11 +360,12 @@ well_table_status <- function(w_perc, perc_values, window) {
                                    as.character(.data$report_dates))) %>%
     tidyr::pivot_wider(names_from = "report_dates", values_from = "n") %>%
     dplyr::arrange(.data$class) %>%
-    dplyr::left_join(select(perc_values, nice, low_show, high_show), by = c("class" = "nice")) %>%
+    dplyr::left_join(dplyr::select(perc_values, "nice", "low_show", "high_show"),
+                     by = c("class" = "nice")) %>%
     dplyr::mutate(class = dplyr::if_else(
-      !stringr::str_detect(class, "Max|Min|Across"),
+      !stringr::str_detect(.data$class, "Max|Min|Across"),
       as.character(glue::glue("{class} ({low_show*100}% - {high_show*100}%)")),
-      class)) %>%
+      .data$class)) %>%
     dplyr::select("class", dplyr::everything(), -"low_show", -"high_show")
 }
 
@@ -380,7 +384,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::arrange(.data$ow, dplyr::desc(.data$Date)) %>%
     dplyr::group_by(.data$ow) %>%
     dplyr::filter(.data$CurrentYear) %>%
-    dplyr::mutate(recent_diff = Value[1] - Value[2],
+    dplyr::mutate(recent_diff = .data$Value[1] - .data$Value[2],
                   keep = dplyr::if_else(all(is.na(.data$Value)),
                                         .data$Date[1],
                                         .data$Date[!is.na(.data$Value)][1])) %>%
@@ -391,7 +395,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       ~if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
     dplyr::mutate(
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
-      percentile = round((1 - percentile) * 100)) %>%
+      percentile = round((1 - .data$percentile) * 100)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$region, .data$area, .data$location, .data$ow) %>%
     dplyr::rename_with(tolower) %>%

@@ -14,7 +14,8 @@ well_report(
   n_days = 13,
   years_min = 5,
   out_dir = ".",
-  cache_age = 7
+  cache_age = 7,
+  cache_report = TRUE
 )
 }
 \arguments{
@@ -45,8 +46,11 @@ percentiles}
 \item{out_dir}{Character. Location of output report. Defaults to working
 directory.}
 
-\item{cache_age}{Logical. Maxmum age in days of cached datasets (not obs well
+\item{cache_age}{Logical. Maximum age in days of cached datasets (not obs well
 data, but metadata related to regional maps, aquifer and wells).}
+
+\item{cache_report}{Logical. Whether or not to use a cache for the report plots.
+Permits faster runs when tweaking details.}
 }
 \description{
 Compile report

@@ -13,6 +13,16 @@
 # the License.
 
 
+#' Update cached data
+#'
+#' @param cache_age Numeric. How old should cache be before updating?
+#' @param type Character. Which data should be updated? By default all (`NULL`).
+#'   Must be a data type in `data_types` (created in `data-raw/internal.R`)
+#'
+#' @return
+#'
+#' @noRd
+
 data_update <- function(cache_age = 7, type = NULL) {
 
   d <- data_details(cache_age)

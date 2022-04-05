@@ -1,4 +1,4 @@
-# Copyright 2021 Province of British Columbia
+# Copyright 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,15 +11,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
+#
+#
+# List of tasks to prep for release
 
-#' BC Governement Groundwater Level Reports
-#'
-#' Create reproducible reports of current groundwater statuses.
-#'
-#' @docType package
-#' @name bcgwlreports-package
-#' @aliases bcgwlreports bcgwlreports-package
-#' @importFrom dplyr %>%
-#' @importFrom rlang .data
-
-NULL
+devtools::check()

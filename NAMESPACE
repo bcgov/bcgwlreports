@@ -2,5 +2,5 @@
 
 export(clean_cache)
 export(well_report)
-importFrom(magrittr,"%>%")
+importFrom(dplyr,"%>%")
 importFrom(rlang,.data)
