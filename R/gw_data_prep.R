@@ -67,12 +67,16 @@
 #'
 #' @export
 #'
-well_report <- function(ows, name = "report",
-                        report_dates = c(Sys.Date() - lubridate::weeks(2),
-                                         Sys.Date() - lubridate::weeks(4)),
-                        title = NULL, description = NULL, remarks = NULL,
-                        n_days = 13, years_min = 5, out_dir = ".",
-                        cache_age = 7) {
+gw_data_prep <- function(ows,
+                         name = "report",
+                         report_dates = Sys.Date(),
+                         title = NULL,
+                         description = NULL,
+                         remarks = NULL,
+                         n_days = 13,
+                         years_min = 5,
+                         out_dir = ".",
+                         cache_age = 7) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
@@ -110,35 +114,62 @@ well_report <- function(ows, name = "report",
 
   message("- Calculating best report dates")
   w_dates <- well_dates(w_full, w_hist, report_dates, n_days)
+  # return(w_dates)
 
   message("- Comparing current to historical data")
   w_comp <- well_hist_compare(w_dates, w_hist)
-
+  #return(w_comp)
   message("- Summarizing percentiles")
   w_perc <- well_percentiles(w_comp)
 
-  message("- Writing report")
 
-  rmarkdown::render(system.file("rmd_report", "report_html.Rmd",
-                                package = "bcgwlreports"),
-                    params = list("title" = title, "description" = description,
-                                  "remarks" = remarks,
-                                  "w_full_all" = w_full_all,
-                                  "w_full" = w_full, "w_hist" = w_hist,
-                                  "w_comp" = w_comp, "w_perc" = w_perc,
-                                  "w_dates" = w_dates, "report_dates" = report_dates,
-                                  "n_days" = n_days,
-                                  "years_min" = years_min),
-                    output_dir = out_dir,
-                    output_file = glue::glue("{name}_{Sys.Date()}.html"),
-                    quiet = TRUE)
 
-  # rmarkdown::render(system.file("rmd_report", "report_pdf.Rmd", package = "bcgwlreports"),
-  #                   params = list("w_full" = w_full, "w_hist" = w_hist,
-  #                                 "w_comp" = w_hist, "w_perc" = w_perc,
-  #                                 "w_dates" = w_dates, "report_dates" = report_dates,
-  #                                 "n_days" = n_days,
-  #                                 "years_min" = years_min),
-  #                   output_dir = out_dir,
-  #                   output_file = glue::glue("report_{Sys.Date()}.pdf"))
+  message("- Creating list")
+
+
+  window <- w_perc %>%
+    dplyr::filter(window) %>%
+    dplyr::pull(report_dates) %>%
+    unique()
+
+  max_report_date <- max(report_dates, na.rm = TRUE)
+  full_window <- seq.Date(from = max_report_date - lubridate::days(n_days),
+                          to = max_report_date + lubridate::days(n_days),
+                          by = "day")
+
+  range1 <- length(report_dates)/2
+  range2 <- (range1 + 1):(range1 * 2)
+  range1 <- 1:range1
+
+  wy <- ifelse(lubridate::month(max_report_date) < 10,
+               lubridate::year(max_report_date),
+               lubridate::year(max_report_date) + 1)
+
+  remarks <- dplyr::tibble(ow = NA_character_, remarks = NA_character_, .rows = 0)
+  if(!is.null(remarks)) remarks <- remarks
+
+  # Create table
+  details <- well_table_summary(w_dates, w_hist, perc_values, full_window)
+
+
+  return(list("ows" = ows,
+              "title" = title,
+              "description" = description,
+              "remarks" = remarks,
+              "w_full_all" = w_full_all,
+              "w_full" = w_full,
+              "w_hist" = w_hist,
+              "w_dates" = w_dates,
+              "w_comp" = w_comp,
+              "w_perc" = w_perc,
+              "details" = details,
+              "report_dates" = report_dates,
+              "n_days" = n_days,
+              "years_min" = years_min,
+              "window" = window,
+              "full_window" = full_window,
+              "range1" = range1,
+              "range2" = range2,
+              "wy" = wy))
+
 }

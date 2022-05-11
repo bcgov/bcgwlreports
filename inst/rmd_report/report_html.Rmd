@@ -21,47 +21,47 @@ title: "`r if(!is.null(params$title)) params$title else 'Observation Wells Groun
 
 ```{css, echo=FALSE}
 h2 {
-  padding-top: 0.2em;
-  padding-left: 0.2em;
-  margin-top: 30px;
-  background-color: #337ab7;
-    border-top: 2px solid grey;
-  color: white;
+padding-top: 0.2em;
+padding-left: 0.2em;
+margin-top: 30px;
+background-color: #337ab7;
+border-top: 2px solid grey;
+color: white;
 }
 
 h3 {
-  margin-top: 35px;
+margin-top: 35px;
 }
 
 body {
-  font-size: 12pt
+font-size: 12pt
 }
 
 .leaflet {
-  margin: auto;
+margin: auto;
 }
 
 summary {
-  padding-bottom:10px;
+padding-bottom:10px;
 }
 
 .bcgwl-table {
-  color: black;
-  border-top: 2px solid black;
-  border-bottom: 2px solid black;
+color: black;
+border-top: 2px solid black;
+border-bottom: 2px solid black;
 }
 
 .bcgwl-table th {
-  padding-top: 7px;
+padding-top: 7px;
 }
 
 .bcgwl-table td {
-  padding-top: 5px;
-  padding-bottom: 3px;
+padding-top: 5px;
+padding-bottom: 3px;
 }
 
 .lightable-classic tfoot tr:first-child td {
-  border-top: 2px solid black;
+border-top: 2px solid black;
 }
 ```
 
@@ -98,6 +98,11 @@ window <- w_perc %>%
   pull(report_dates) %>%
   unique()
 
+max_report_date <- max(params$report_dates, na.rm = TRUE)
+full_window <- seq.Date(from = max_report_date - lubridate::days(n_days), 
+                        to = max_report_date + lubridate::days(n_days), 
+                        by = "day")
+
 range1 <- length(report_dates)/2
 range2 <- (range1 + 1):(range1 * 2)
 range1 <- 1:range1
@@ -106,7 +111,9 @@ remarks <- tibble(ow = NA_character_, remarks = NA_character_, .rows = 0)
 if(!is.null(params$remarks)) remarks <- params$remarks
 
 # Get Water Year
-wy <- unique(w_dates$WaterYear[w_dates$CurrentYear])
+wy <- ifelse(lubridate::month(max_report_date) < 10,
+               lubridate::year(max_report_date),
+               lubridate::year(max_report_date) + 1)
 
 ```
 
@@ -123,30 +130,30 @@ This report was generated on `r format(Sys.Date(), "%B %d, %Y")`.
 
 The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.
 
-The following summaries compare recent groundwater levels to historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all years of data.
+The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all years of data.
 
 In general, a groundwater level value that is:
 
 * the highest ever measured for the day of year is considered 
-  <span style="color: `r perc_values$colour[1]`;">**High**</span>
+<span style="color: `r perc_values$colour[1]`;">**High**</span>
 * greater than the 90th percentile is considered 
-  <span style="color: `r perc_values$colour[2]`;">**Much Above Normal**</span>
+<span style="color: `r perc_values$colour[2]`;">**Much Above Normal**</span>
 * between 75th percentile and 90th percentile is considered 
-  <span style="color: `r perc_values$colour[3]`;">**Above Normal**</span>
+<span style="color: `r perc_values$colour[3]`;">**Above Normal**</span>
 * between 25th and 75th percentiles is considered 
-  <span style="color: `r perc_values$colour[4]`;">**Normal**</span>
+<span style="color: `r perc_values$colour[4]`;">**Normal**</span>
 * less than the 25 percentile is considered 
-  <span style="color: `r perc_values$colour[5]`;">**Below Normal**</span>
+<span style="color: `r perc_values$colour[5]`;">**Below Normal**</span>
 * less than 10 percentile is considered 
-  <span style="color: `r perc_values$colour[6]`;">**Much Below Normal**</span>
+<span style="color: `r perc_values$colour[6]`;">**Much Below Normal**</span>
 * the lowest ever measured for the day of year is considered
-  <span style="color: `r perc_values$colour[7]`;">**Low**</span>.
+<span style="color: `r perc_values$colour[7]`;">**Low**</span>.
 
 ## Groundwater Level Conditions {#map}
 
 
 ```{r wells_map}
-details <- well_table_summary(w_dates, w_hist, perc_values)
+details <- well_table_summary(w_dates, w_hist, perc_values, full_window)
 well_map(details)
 ```
 
@@ -240,11 +247,16 @@ t %>%
 
 **Latest details on observation wells in Water Year `r wy-1` - `r wy`**
 
-
-
 ```{r well_summaries, results = "asis"}
 foot1 <- "n is the number of years included in the percentile calculation."
 foot2 <- "Values with an Approval Status of ‘Working’"
+
+max_dates <- w_full %>% 
+  dplyr::group_by(ow) %>% 
+  dplyr::summarise(date2 = max(Date))
+details <- dplyr::left_join(details, max_dates, by = "ow")
+details <- dplyr::mutate(details, date = date2)
+details <- dplyr::select(details, -date2)
 
 for(r in unique(details$region)) {
   
@@ -256,11 +268,13 @@ for(r in unique(details$region)) {
     cat("\n\n<details open>\n\n<summary>Show/Hide</summary>\n\n")
   }
   
+  
+  
   details %>%
     mutate(percentile = if_else(
       !is.na(percentile), 
       glue("{class} ({percentile}%)<br><small>(n = {n_years})</small>"),
-      glue("(n = {n_years})")),
+      glue("Not Available<br><small>(n = {n_years})</small>")),
       percentile = purrr::map(percentile, html)) %>%
     filter(region == r) %>%
     select(area, location, ow, hydraulic_connectivity, 
@@ -280,16 +294,16 @@ for(r in unique(details$region)) {
     gt_perc_colours() %>%
     fmt_missing(everything(), missing_text = "") %>%
     tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
-    tab_footnote(foot2, locations = cells_body(columns = "date", 
+    tab_footnote(foot2, locations = cells_body(columns = "date",
                                                rows = approval == "Working")) %>%
-    opt_footnote_marks(marks = c("a", "\u2731")) %>%
+    opt_footnote_marks(marks = c("a", "**")) %>%
     text_transform(locations = cells_body(columns = "ow"),
-                   fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
+                   fn = function(x) ow_link(x, format = "html")) %>% #ow_fish(x) %>% 
     cols_align("left", columns = "remarks") %>%
     gt_bcgwl_style() %>%
     knitr::knit_print() %>%
     cat()
-
+  
   cat("</details>")
 }
 ```
@@ -311,8 +325,8 @@ Note: ‘Working’ data are preliminary and have not yet been finalized as ‘A
 latest_date <- w_dates %>% 
   group_by(ow) %>% 
   filter(!is.na(Value)) %>%
-  filter(Date == max(Date)) %>%
-  filter(CurrentYear) #Keep only ones that are in Table 4?
+  filter(Date == max(Date)) #%>%
+# filter(CurrentYear) #Keep only ones that are in Table 4?
 
 w_meta <- w_dates %>%
   well_meta() %>%
@@ -334,20 +348,23 @@ for(r in unique(w_meta$region)) {
       filter(.data$ow %in% !!ow) %>%
       select("ow", "location_long", "type", "hydraulic_connectivity") %>%
       distinct() %>%
-      mutate(ow = ow_fish(ow)) %>%
+      mutate(ow_fish = ow_fish(ow),
+             ow = ifelse(is.na(ow_fish),ow, ow_fish)) %>%
       glue_data("\n\n\n#### {ow}\n\n",  # Map title e.g., OW008
                 "**{location_long}** | **[Map](#map)**   \n",
-                "**{type} aquifer** | ",
-                "**{stringr::str_to_sentence(hydraulic_connectivity)} ",
-                "hydraulically connected**\n\n") %>%
+                "{ifelse(!is.na(type),type,'No listed')} aquifer",
+                "{ifelse(!is.na(type),paste0(' | ', stringr::str_to_sentence(hydraulic_connectivity),' hydraulically connected\n\n') ,'')} ") %>%
       cat()
     full <- filter(w_full, ow == !!ow)
     full_all <- filter(w_full_all, ow == !!ow)
     hist <- filter(w_hist, ow == !!ow)
     date <- filter(latest_date, ow == !!ow)
     
+    min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
+                                       TRUE ~ NA_real_)
+    
     g1 <- well_plot_perc(full, hist, date, years_min, water_year = wy)
-    g2 <- well_plot_hist(full_all, hist)
+    g2 <- well_plot_hist(full_all, hist, vline_date = min_daily_date)
     
     g <- g1 / g2
     print(g)
@@ -386,7 +403,7 @@ w_dates %>%
   tab_spanner(label = "Report Dates vs. Measurement Dates", 
               columns = -c("area", "location", "ow")) %>%
   text_transform(locations = cells_body(columns = "ow"),
-                 fn = function(x) ow_fish(x) %>% ow_link(format = "html")) %>%
+                 fn = function(x) ow_link(x, format = "html")) %>% #ow_fish(x) %>% 
   gt_bcgwl_style()
 ```
 
@@ -403,8 +420,8 @@ w_dates %>%
 - 366 day in leap years is omitted
 - "Good" quality data have 'Approved' historical values for >= `r years_min` years
 - "Poor" quality data have 'Approved' historical values for < `r years_min` 
-  years and are not used (percentiles for that well on that day of the year are
-  missing from the figures and tables).
+years and are not used (percentiles for that well on that day of the year are
+missing from the figures and tables).
 
 
 ### C - Run info
@@ -414,9 +431,9 @@ w_dates %>%
 - **Observation Wells** (`ows`): `r glue_collapse(ows, ", ")`
 - **Report Dates** (`report_dates`): `r glue_collapse(report_dates[1:2], ", ")`
 - **No. Days on either side of report date in which search for alternate date** (`n_days`): `r n_days`
-  - Total window around (and including) a reporting date is **`r n_days * 2 + 1` days**
+- Total window around (and including) a reporting date is **`r n_days * 2 + 1` days**
 - **Percentile Calculations**
-  - **Min number of years** (`years_min`) - `r years_min`
+- **Min number of years** (`years_min`) - `r years_min`
 
 #### Session Info
 

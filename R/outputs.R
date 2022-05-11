@@ -57,7 +57,7 @@ gt_bcgwl_style <- function(gtable) {
 footnotes_below_normal <- function(gt, missing_dates, missing_data,
                                    n_days = NULL) {
   foot1 <- glue::glue("(X/Y) indicates X wells with low values out of Y wells ",
-                "total for that date")
+                      "total for that date")
   foot2 <- "Blank cells indicate no data"
   foot3 <- glue::glue("Not all reporting dates had data. Includes values ",
                       "obtained from a {n_days*2 + 1}-day window centred on the ",
@@ -79,7 +79,7 @@ footnotes_below_normal <- function(gt, missing_dates, missing_data,
     gt <- gt::tab_footnote(
       gt, footnote = foot3,
       locations = gt::cells_column_labels(dplyr::all_of(missing_dates)))
-    marks <- c(marks, "\\u2731")
+    marks <- c(marks, "**")
   }
 
   # Needs at least two to use custom marks
@@ -93,55 +93,58 @@ well_map <- function(details, format = "html") {
 
   n_regions <- length(unique(details$region))
 
- locs <- data_load("wells_sf") %>%
-   dplyr::right_join(dplyr::select(details, "ow", "class", "percentile"),
-                     by = "ow") %>%
-   dplyr::mutate(
-     percentile = dplyr::if_else(
-       is.na(.data$percentile),
-       glue::glue("No current data"),
-       glue::glue("{percentile}"))) %>%
-   sf::st_transform(4326) %>%
-   dplyr::left_join(region_names, by = "ow") %>%
-   dplyr::mutate(ow_tt = ow_fish(.data$ow))
+  locs <- data_load("wells_sf") %>%
+    # sf::st_jitter(factor == 0.001) %>%
+    dplyr::right_join(dplyr::select(details, "ow", "class", "percentile"),
+                      by = "ow") %>%
+    dplyr::mutate(
+      percentile = dplyr::if_else(
+        is.na(.data$percentile),
+        glue::glue("Not Available"),
+        glue::glue("{percentile}"))) %>%
+    sf::st_transform(4326) %>%
+    dplyr::left_join(region_names, by = "ow") %>%
+    dplyr::mutate(ow_tt = ow_fish(.data$ow))
 
- # If multiple regions, don't link OWs to plots
- if(n_regions == 1) {
-   locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow_tt, format = format))
- }
+  # If multiple regions, don't link OWs to plots
+  if(n_regions == 1) {
+    locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow_tt, format = format))
+  }
 
- locs <- locs %>%
-   dplyr::mutate(
-     tooltip = glue::glue(
-       "<strong>Well</strong>: {.data$ow_tt}<br>",
-       "<strong>Region</strong>: {.data$region}<br>",
-       "<strong>Location</strong>: {.data$location_long}<br>",
-       "<strong>Current percentile</strong>: {.data$percentile}"),
-     tooltip = purrr::map(.data$tooltip, gt::html),
-     class = factor(class, levels = perc_values$nice))
+  locs <- locs %>%
+    dplyr::mutate(
+      tooltip = glue::glue(
+        "<strong>Well</strong>: {.data$ow_tt}<br>",
+        "<strong>Region</strong>: {.data$region}<br>",
+        "<strong>Location</strong>: {.data$location_long}<br>",
+        "<strong>Current percentile</strong>: {.data$percentile}"),
+      tooltip = purrr::map(.data$tooltip, gt::html),
+      class = factor(class, levels = perc_values$nice))
 
- perc_pal <- leaflet::colorFactor(perc_values$colour, levels = perc_values$nice)
+  perc_pal <- leaflet::colorFactor(perc_values$colour, levels = perc_values$nice)
 
- regions <- data_load("regions") %>%
-   sf::st_transform(4326)
+  regions <- data_load("regions") %>%
+    sf::st_transform(4326)
 
- leaflet::leaflet(data = locs) %>%
-   leaflet::addProviderTiles("Stamen.Terrain") %>%
-   leaflet::addCircleMarkers(color = "black",
-                             fillColor = ~perc_pal(class), weight = 1,
-                             fillOpacity = 1, radius = 7,
-                             popup = ~tooltip, label = ~ow,
-                             labelOptions = leaflet::labelOptions(
-                               noHide = TRUE, textOnly = TRUE, direction = "top",
-                               style = list("font-weight" = "bold",
-                                            "font-size" = "12px"))) %>%
-   leaflet::addLegend("topright", title = "Groundwater Levels",
-                      colors = c(perc_values$colour, "#808080"),
-                      labels = c(perc_values$nice, "No current data"))
+
+
+  leaflet::leaflet(data = locs) %>%
+    leaflet::addProviderTiles("Stamen.Terrain") %>%
+    leaflet::addCircleMarkers(color = "black",
+                              fillColor = ~perc_pal(class), weight = 1,
+                              fillOpacity = 1, radius = 7,
+                              popup = ~tooltip, label = ~ow,
+                              labelOptions = leaflet::labelOptions(
+                                noHide = FALSE, textOnly = TRUE, direction = "top",
+                                style = list("font-weight" = "bold",
+                                             "font-size" = "12px"))) %>%
+    leaflet::addLegend("topright", title = "Groundwater Levels",
+                       colors = c(perc_values$colour, "#808080"),
+                       labels = c(perc_values$nice, "Not Available"))
 }
 
 
-well_plots_base <- function(title = "", legend = "right", caption = NA) {
+well_plots_base <- function(title = "", legend = "right", caption = NA, subtitle = NULL) {
   p_values <- dplyr::filter(perc_values, !.data$class %in% c("p_max", "p_min"))
   g <- ggplot2::ggplot() +
     ggplot2::theme_bw() +
@@ -155,14 +158,17 @@ well_plots_base <- function(title = "", legend = "right", caption = NA) {
     ggplot2::scale_fill_manual(
       values = stats::setNames(p_values$colour, p_values$nice)) +
     ggplot2::labs(x = "Day of Year",
-                  y = "Water Level Below Ground (metres)", subtitle = title)
+                  y = "Water Level Below Ground (metres)",
+                  title = title, subtitle = subtitle)
 
   if(!is.na(caption)) g <- g + ggplot2::labs(caption = caption)
   g
 }
 
 well_plot_perc <- function(full, hist, latest_date = NULL,
-                           years_min, water_year, legend = "right") {
+                           years_min, water_year, legend = "right", info = "") {
+
+  origin <- as.Date("1998-09-30")
 
   # Change names for approval
   full <- full %>%
@@ -171,98 +177,143 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
       levels = c("Median", "Approved", "Working"),
       labels = c("Median", "Current Year Approved", "Current Year Working")))
 
+  hist <- hist %>%
+    dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin),
+                  Approval = "Median",
+                  q = purrr::map(.data$v, well_quantiles, minmax = FALSE)) %>%
+    tidyr::unnest(q)
+
+  # if there is no data in the current water year
+  # if (water_year %in% latest_date$WaterYear) {
+
+  # Fake the year of the latest date
+  if (nrow(latest_date) != 0) {
+    latest_date <- latest_date %>%
+      dplyr::mutate(Date_plot = lubridate::as_date(DayofYear, origin = !!origin))
+  }
+
   # Get current and previous year
-  recent <- dplyr::filter(full, .data$WaterYear == !!water_year)
+  recent <- dplyr::filter(full, .data$WaterYear == !!water_year) %>%
+    dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin))
 
   lastyear <- dplyr::filter(full, .data$WaterYear == !!water_year - 1) %>%
     # Fake the year to plot on top
     dplyr::mutate(Date = dplyr::if_else(.data$WaterYear == !!water_year - 1,
                                         .data$Date + lubridate::years(1),
-                                        .data$Date))
+                                        .data$Date)) %>%
+    dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin))
 
-  title <- glue::glue("Annual Hydrograph – Water Year ",
-                      "[{water_year - 1} - {water_year}]")
+  data <- dplyr::select(recent, "Date", "Approval", "Value") %>%
+    dplyr::bind_rows(dplyr::select(hist, "Date", "Approval",
+                                   "Value" = "median"))
+  # } else {
+  #   # Get current and previous year
+  #   recent <- dplyr::mutate(full, Date = lubridate::as_date(.data$DayofYear, origin = !!origin))
+  #
+  #   lastyear <- dplyr::filter(full, .data$WaterYear == !!water_year - 1) %>%
+  #     # Fake the year to plot on top
+  #     dplyr::mutate(Date = dplyr::if_else(.data$WaterYear == !!water_year - 1,
+  #                                         .data$Date + lubridate::years(1),
+  #                                         .data$Date)) %>%
+  #     dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin))
+  #
+  #   data <- dplyr::select(hist, "Date", "Approval",
+  #                         "Value" = "median")
+  # }
+  #  if(nrow(recent) > 0) {
+  #origin <- min(recent$Date[recent$DayofYear == 1] - lubridate::days(1))
 
-  if(nrow(recent) > 0) {
-    origin <- min(recent$Date[recent$DayofYear == 1] - lubridate::days(1))
-    hist <- hist %>%
-      dplyr::mutate(Date = lubridate::as_date(.data$DayofYear, origin = !!origin),
-                    Approval = "Median",
-                    q = purrr::map(.data$v, well_quantiles, minmax = FALSE)) %>%
-      tidyr::unnest(q)
 
-    data <- dplyr::select(recent, "Date", "Approval", "Value") %>%
-      dplyr::bind_rows(dplyr::select(hist, "Date", "Approval",
-                                     "Value" = "median"))
 
-    range_name <- glue::glue("Historical range of min & max ",
-                             "({hist$start_year[1]} - {hist$end_year[1]})")
 
-    caption <- NA_character_
-    if(nrow(hist) == 0) {
-      caption <- "Not enough non-missing data to calculate percentiles"
-    } else if(any(hist$quality_hist == "poor")) {
-      caption <- glue::glue("Percentiles skipped for some dates with ",
-                            "less than {years_min} years of data.")
-    }
+  range_name <- glue::glue("Historical range of min & max ",
+                           "({hist$start_year[1]} - {hist$end_year[1]})")
 
-    p <- well_plots_base(title = title, legend = legend, caption = caption) +
-      ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 14))
+  caption <- NA_character_
+  if(nrow(hist) == 0) {
+    caption <- "Not enough non-missing data to calculate percentiles"
+  } else if(any(hist$quality_hist == "poor")) {
+    caption <- glue::glue("Percentiles skipped for some dates with ",
+                          "less than {years_min} years of data.")
+  }
 
-    if(nrow(hist) > 0) {
-      p <- p +
-        ggplot2::geom_ribbon(data = hist, alpha = 0.5,
-                             ggplot2::aes_string(x = "Date", ymin = "q_low",
-                                                 ymax = "q_high", fill = "nice"))
-    }
+
+  title <- glue::glue("{info}Daily Water Levels Hydrograph – Water Years: ",
+                      "{min(full$WaterYear)} to {max(full$WaterYear)}")
+  subtitle <- glue::glue("Latest Available Date: {max(full$Date)}")
+
+  p <- well_plots_base(title = title, legend = legend, caption = caption, subtitle = subtitle) +
+    ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 11),
+                   plot.title = ggplot2::element_text(size = 13))+
+    ggplot2::labs(caption = "Note: only continuous daily data from historical records used in percentiles calculations")
+
+  if(nrow(hist) > 0) {
     p <- p +
-      ggplot2::geom_line(
-        data = data,
-        ggplot2::aes_string(x = "Date", y = "Value",
-                            colour = "Approval", size = "Approval"),
-        na.rm = TRUE) +
-      ggplot2::geom_line(
-        data = lastyear,
-        ggplot2::aes_string(x = "Date", y = "Value", linetype = "'Previous Year'",
-                            colour = "Approval", size = "Approval"),
-        na.rm = TRUE) +
-      ggplot2::scale_linetype_manual(values = "dotted")
+      ggplot2::geom_ribbon(data = hist, alpha = 0.5,
+                           ggplot2::aes_string(x = "Date", ymin = "q_low",
+                                               ymax = "q_high", fill = "nice"))
+  }
 
-    if(!is.null(latest_date) &&
-       nrow(latest_date) > 0 &&
-       latest_date$Date %in% data$Date) {
+
+  #  data
+  p <- p +
+    ggplot2::geom_line(
+      data = data,
+      ggplot2::aes_string(x = "Date", y = "Value",
+                          colour = "Approval", size = "Approval"),
+      na.rm = TRUE)
+  p <- p +
+    ggplot2::geom_line(
+      data = lastyear,
+      ggplot2::aes_string(x = "Date", y = "Value", linetype = "'Previous Year\nWorking/Approved'",
+                          colour = "Approval", size = "Approval"),
+      na.rm = TRUE) +
+    ggplot2::scale_linetype_manual(values = "dotted")
+
+  # if(!is.null(latest_date) &&
+  #    nrow(latest_date) > 0 &&
+  #    latest_date$Date %in% data$Date) {
+  if (nrow(latest_date) != 0) {
+
+    if (water_year %in% latest_date$WaterYear) {
+
       p <- p +
         ggplot2::geom_point(
           data = latest_date, size = 3,
-          ggplot2::aes_string(x = "Date", y = "Value", shape = "'Latest Report Date'"),
+          ggplot2::aes_string(x = "Date_plot", y = "Value", shape = "'Latest Report Date'"),
           fill = "black")
     }
-    p +
-      ggplot2::scale_size_manual(
-        values = stats::setNames(plot_values$size, plot_values$type_current)) +
-      ggplot2::scale_colour_manual(
-        values = stats::setNames(plot_values$colour, plot_values$type_current)) +
-      ggplot2::scale_shape_manual(values = 21) +
-      ggplot2::guides(shape = ggplot2::guide_legend(order = 1),
-                      fill = ggplot2::guide_legend(order = 2),
-                      colour = ggplot2::guide_legend(order = 3),
-                      linetype = ggplot2::guide_legend(order = 4), size = "none")
-
-  } else {
-    well_plots_base(title = title) +
-      ggplot2::theme(axis.text = ggplot2::element_blank(),
-                     axis.ticks = ggplot2::element_blank()) +
-      ggplot2::annotate(geom = "text", x = Sys.Date(), y = 1, label = "No Data")
   }
+  #  }
+  p +
+    ggplot2::scale_size_manual(
+      values = stats::setNames(plot_values$size, plot_values$type_current)) +
+    ggplot2::scale_colour_manual(
+      values = stats::setNames(plot_values$colour, plot_values$type_current)) +
+    ggplot2::scale_shape_manual(values = 21) +
+    ggplot2::guides(shape = ggplot2::guide_legend(order = 4),
+                    fill = ggplot2::guide_legend(order = 1),
+                    colour = ggplot2::guide_legend(order = 2),
+                    linetype = ggplot2::guide_legend(order = 3), size = "none")
+
+  # } else {
+  #   well_plots_base(title = title) +
+  #     ggplot2::theme(axis.text = ggplot2::element_blank(),
+  #                    axis.ticks = ggplot2::element_blank()) +
+  #     ggplot2::annotate(geom = "text", x = Sys.Date(), y = 1, label = "No Data")
+  # }
 }
 
-well_plot_hist <- function(full, hist, legend = "right") {
+well_plot_hist <- function(full, hist, legend = "right", vline_date, info = "") {
 
   title <- dplyr::filter(full, !is.na(.data$Value)) %>%
     dplyr::summarize(min = min(.data$Date), max = max(.data$Date)) %>%
-    glue::glue_data("Historical Record - {min} to {max}")
+    glue::glue_data("{info}Historical Record - {min} to {max}")
 
   well_plots_base(title = title, legend = legend) +
+    ggplot2::geom_vline(xintercept = vline_date, linetype = 2, na.rm = TRUE, alpha = 0.6)+
+    # ggplot2::geom_rect(aes(xmin = vline_date, xmax = structure(Inf, class = "Date"), ymin=-Inf, ymax=Inf), fill = "gray", alpha = 0.3)+
+    {if(!is.na(vline_date)) ggplot2::labs(caption = "Note: only daily data collected after dashed line used in percentiles calculations")}+
     ggplot2::geom_point(data = full,
                         ggplot2::aes_string(x = "Date", y = "Value",
                                             colour = "Approval"),
@@ -270,7 +321,9 @@ well_plot_hist <- function(full, hist, legend = "right") {
     ggplot2::scale_size_manual(
       values = stats::setNames(plot_values$size[1:2], plot_values$type[1:2])) +
     ggplot2::scale_colour_manual(
-      values = stats::setNames(plot_values$colour[1:2], plot_values$type[1:2]))
+      values = stats::setNames(plot_values$colour[1:2], plot_values$type[1:2])) +
+    ggplot2::xlab("Date") +
+    ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 14))
 }
 
 
@@ -369,11 +422,15 @@ well_table_status <- function(w_perc, perc_values, window) {
     dplyr::select("class", dplyr::everything(), -"low_show", -"high_show")
 }
 
-well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
+well_table_summary <- function(w_dates, w_hist, perc_values, full_window, format = "html"){#, , full_window) {
   t <- well_hist_compare(w_dates, w_hist)
 
+  # full_window <- seq.Date(max(t$Date) - lubridate::days(n_days),
+  #                         max(t$Date) + lubridate::days(n_days),
+  #                         by = "day")
+
   last_year <- t %>%
-    dplyr::filter(!.data$CurrentYear) %>%
+    #dplyr::filter(!.data$CurrentYear) %>%
     dplyr::select("ow", "value_last_year" = "Value", "report_dates") %>%
     dplyr::mutate(report_dates = .data$report_dates + lubridate::years(1))
 
@@ -383,7 +440,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     well_meta() %>%
     dplyr::arrange(.data$ow, dplyr::desc(.data$Date)) %>%
     dplyr::group_by(.data$ow) %>%
-    dplyr::filter(.data$CurrentYear) %>%
+    #  dplyr::filter(.data$CurrentYear) %>%
     dplyr::mutate(recent_diff = .data$Value[1] - .data$Value[2],
                   keep = dplyr::if_else(all(is.na(.data$Value)),
                                         .data$Date[1],
@@ -392,7 +449,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
     dplyr::left_join(last_year, by = c("ow", "report_dates")) %>%
     dplyr::mutate(dplyr::across(
       .cols = c("Value", "value_last_year", "recent_diff"),
-      ~if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
+      ~dplyr::if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
     dplyr::mutate(
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
       percentile = round((1 - .data$percentile) * 100)) %>%
@@ -404,5 +461,8 @@ well_table_summary <- function(w_dates, w_hist, perc_values, format = "html") {
       "hydraulic_connectivity", "aquifer_type" = "type",
       "date", "class", "percentile", "n_years", "approval",
       "value", "value_last_year",
-      "recent_diff")
+      "recent_diff") %>%
+    dplyr::mutate(percentile = ifelse(.data$date %in% full_window, .data$percentile, NA),
+                  class = ifelse(.data$date %in% full_window, .data$class, "Not Available"))
+
 }

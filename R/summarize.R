@@ -55,10 +55,10 @@ well_clean <- function(w, water_year_start, report_dates) {
 
 well_meta <- function(w) {
   if(is.vector(w)) w <- dplyr::tibble(ow = !!w)
-    w %>%
-      dplyr::left_join(well_regions(unique(w$ow)), by = "ow") %>%
-      dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow")) %>%
-      dplyr::arrange(.data$region, .data$area, .data$ow)
+  w %>%
+    dplyr::left_join(well_regions(unique(w$ow)), by = "ow") %>%
+    dplyr::left_join(data_load("aquifers"), by = c("aquifer_id", "ow")) %>%
+    dplyr::arrange(.data$region, .data$area, .data$ow)
 }
 
 well_hist <- function(w_full, years_min) {
@@ -82,7 +82,8 @@ well_hist <- function(w_full, years_min) {
       quality_hist = dplyr::if_else(.data$n_years >= !!years_min, "good", "poor"),
       quality_hist = factor(.data$quality_hist, levels = c("poor", "good")),
       v = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$v),
-      p = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$p))
+      p = dplyr::if_else(.data$quality_hist == "poor", list(NA), .data$p)) %>%
+    dplyr::filter(n_years >= years_min)
 }
 
 well_dates <- function(w_full, w_hist, report_dates, n_days) {
@@ -94,8 +95,16 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
                                          by = "1 day"))) %>%
     tidyr::unnest(.data$Date)
 
+  # r <- dplyr::bind_rows(
+  #   lapply(unique(w_full$ow), function(i){
+  #     r$ow <- i
+  #     r
+  #   })
+  # )
+
   w_full %>%
-    dplyr::right_join(r, by = "Date") %>%
+    #    dplyr::right_join(r, by = c("ow","Date")) %>%
+    dplyr::right_join(r, by = c("Date")) %>%
     dplyr::filter(!is.na(.data$ow)) %>%
     dplyr::left_join(
       dplyr::select(w_hist, "ow", "DayofYear", "quality_hist", "n_years"),
@@ -104,20 +113,51 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
     dplyr::arrange(dplyr::desc(.data$quality_hist),
                    abs(.data$Date - .data$report_dates),
                    .by_group = TRUE) %>%
-   dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
-                                       .data$Date[1],
-                                       .data$Date[!is.na(.data$Value)][1])) %>%
-   dplyr::filter(.data$Date == .data$keep) %>%
-   dplyr::ungroup() %>%
-   dplyr::select(-"keep")
+    dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
+                                        .data$Date[1],
+                                        .data$Date[!is.na(.data$Value)][1])) %>%
+    dplyr::filter(.data$Date == .data$keep) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-"keep")
+
+  # r2 <- w_full %>%
+  #   # dplyr::right_join(r, by = c("ow","Date")) %>%
+  #   dplyr::right_join(r, by = c("Date"))
+  #
+  # if (all(is.na(r2$Value))) {
+  #   r3 <- w_full %>%
+  #     dplyr::right_join(r, by = c("Date")) %>%
+  #     dplyr::filter(!is.na(Value)) %>%
+  #     dplyr::filter(Date == max(Date, na.rm=TRUE))
+  # } else {
+  #   r3 <- w_full %>%
+  #     dplyr::right_join(r, by = c("Date")) %>%
+  #     dplyr::filter(!is.na(.data$ow))
+  # }
+  # r3  %>%
+  #   dplyr::left_join(
+  #     dplyr::select(w_hist, "ow", "DayofYear", "quality_hist", "n_years"),
+  #     by = c("ow", "DayofYear")) %>%
+  #   dplyr::group_by(.data$ow, .data$report_dates) %>%
+  #   dplyr::arrange(dplyr::desc(.data$quality_hist),
+  #                  abs(.data$Date - .data$report_dates),
+  #                  .by_group = TRUE) %>%
+  #   dplyr::mutate(keep = dplyr::if_else(all(is.na(.data$Value)),
+  #                                       .data$Date[1],
+  #                                       .data$Date[!is.na(.data$Value)][1])) %>%
+  #   dplyr::filter(.data$Date == .data$keep) %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::select(-"keep")
 }
 
 well_hist_compare <- function(w_dates, w_hist) {
-  w_dates %>%
-    dplyr::left_join(w_hist, by = c("ow", "DayofYear", "n_years", "quality_hist")) %>%
-    dplyr::mutate(percentile = purrr::map2_dbl(
-      .data$p, .data$Value,
-      ~{if(!is.null(.x)) .x(.y) else NA_real_}))
+  # if (nrow(w_dates) > 0) {
+    w_comp <- w_dates %>%
+      dplyr::left_join(w_hist, by = c("ow", "DayofYear", "n_years", "quality_hist")) %>%
+      dplyr::mutate(percentile = purrr::map2_dbl(
+        .data$p, .data$Value,
+        ~{if(!is.null(.x)) .x(.y) else NA_real_}))
+
 }
 
 well_percentiles <- function(w_comp) {
@@ -143,7 +183,7 @@ well_percentiles <- function(w_comp) {
     dplyr::ungroup() %>%
     dplyr::group_by(.data$report_dates) %>%
     dplyr::mutate(n_total_date = sum(.data$n_class_subtype),
-           window = any(.data$window, na.rm = TRUE)) %>%
+                  window = any(.data$window, na.rm = TRUE)) %>%
     dplyr::ungroup()
 }
 

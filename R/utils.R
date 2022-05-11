@@ -42,15 +42,18 @@ ow_fish <- function(ow) {
 }
 
 find_continuous <- function(w) {
+  suppressMessages(library(lubridate))
   first_date <- w %>%
     dplyr::mutate(month = lubridate::floor_date(.data$Date, "month")) %>%
     dplyr::group_by(.data$month) %>%
-    dplyr::summarize(n = dplyr::n()) %>%
+    dplyr::summarize(n = sum(!is.na(Value))) %>% #dplyr::n()
     dplyr::filter(.data$n > 25) %>%
     dplyr::slice(1) %>%
     dplyr::pull(.data$month)
 
-  dplyr::mutate(w, continuous_data = .data$Date > !!first_date)
+  first_date <- first_date %m-% months(1)
+
+  dplyr::mutate(w, continuous_data = .data$Date >= !!first_date)
 }
 
 perc_match <- function(x, cols = "class") {
@@ -163,4 +166,5 @@ check_name <- function(name) {
     stop("'name' is too long (longer than 100 characters)", call. = FALSE)
   }
 }
+
 
