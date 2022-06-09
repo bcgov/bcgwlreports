@@ -59,7 +59,7 @@ footnotes_below_normal <- function(gt, missing_dates, missing_data,
   foot1 <- glue::glue("(X/Y) indicates X wells with low values out of Y wells ",
                       "total for that date")
   foot2 <- "Blank cells indicate no data"
-  foot3 <- glue::glue("Not all reporting dates had data. Includes values ",
+  foot3 <- glue::glue("Not all wells had data in the reporting window. Includes values ",
                       "obtained from a {n_days*2 + 1}-day window centred on the ",
                       "reporting date")
 
@@ -112,6 +112,7 @@ well_map <- function(details, format = "html") {
   }
 
   locs <- locs %>%
+    sf::st_jitter(factor = 0.00008) %>%
     dplyr::mutate(
       tooltip = glue::glue(
         "<strong>Well</strong>: {.data$ow_tt}<br>",
@@ -129,7 +130,10 @@ well_map <- function(details, format = "html") {
 
 
   leaflet::leaflet(data = locs) %>%
-    leaflet::addProviderTiles("Stamen.Terrain") %>%
+   # leaflet::addTiles(group = "OpenStreetMap") %>%
+    leaflet::addProviderTiles(leaflet::providers$Stamen.Terrain, group = "Stamen (Terrain)") %>%
+    leaflet::addProviderTiles(leaflet::providers$Esri.NatGeoWorldMap, group = "ESRI NatGeoWorldMap") %>%
+    leaflet::addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "ESRI WorldImagery") %>%
     leaflet::addCircleMarkers(color = "black",
                               fillColor = ~perc_pal(class), weight = 1,
                               fillOpacity = 1, radius = 7,
@@ -137,10 +141,15 @@ well_map <- function(details, format = "html") {
                               labelOptions = leaflet::labelOptions(
                                 noHide = FALSE, textOnly = TRUE, direction = "top",
                                 style = list("font-weight" = "bold",
-                                             "font-size" = "12px"))) %>%
+                                             "font-size" = "12px"))
+                             # , clusterOptions = leaflet::markerClusterOptions(maxClusterRadius = 0.1)
+                              ) %>%
     leaflet::addLegend("topright", title = "Groundwater Levels",
                        colors = c(perc_values$colour, "#808080"),
-                       labels = c(perc_values$nice, "Not Available"))
+                       labels = c(perc_values$nice, "Not Available")) %>%
+    leaflet::addLayersControl(
+      baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),
+      position = "topleft")#"OpenStreetMap",
 }
 
 
@@ -237,10 +246,13 @@ well_plot_perc <- function(full, hist, latest_date = NULL,
                           "less than {years_min} years of data.")
   }
 
+  # full_latest <- dplyr::filter(full, complete.cases(Value)) %>%
+  #   dplyr::pull(Date) %>%
+  #   max(na.rm= TRUE)
 
   title <- glue::glue("{info}Daily Water Levels Hydrograph – Water Years: ",
                       "{min(full$WaterYear)} to {max(full$WaterYear)}")
-  subtitle <- glue::glue("Latest Available Date: {max(full$Date)}")
+  subtitle <- glue::glue("Latest Available Date: {max(full$Date, na.rm=TRUE)}")
 
   p <- well_plots_base(title = title, legend = legend, caption = caption, subtitle = subtitle) +
     ggplot2::theme(plot.subtitle = ggplot2::element_text(size = 11),
@@ -349,7 +361,7 @@ well_table_below_norm <- function(w_perc, window, which = "totals") {
   if(which == "totals") {
     r <- w_perc %>%
       dplyr::select(-"subtype") %>%
-      dplyr::filter(stringr::str_detect(.data$class, "low|Min")) %>%
+      dplyr::filter(stringr::str_detect(.data$class, "Low|Min|Below")) %>%
       dplyr::group_by(.data$report_dates) %>%
       dplyr::summarize(t = unique(.data$n_total_date),
                        n = sum(.data$n_class_subtype),
@@ -362,7 +374,7 @@ well_table_below_norm <- function(w_perc, window, which = "totals") {
       dplyr::arrange(dplyr::desc(.data$report_dates))
   } else {
     r <- w_perc %>%
-      dplyr::filter(stringr::str_detect(.data$class, "low|Min")) %>%
+      dplyr::filter(stringr::str_detect(.data$class, "Low|Min|Below")) %>%
       dplyr::left_join(type_values, by = "subtype") %>%
       dplyr::group_by(.data$report_dates, .data[[which]], .data$subtype) %>%
       dplyr::summarize(t = unique(.data$n_total_subtype),

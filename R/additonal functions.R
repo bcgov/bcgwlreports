@@ -141,7 +141,7 @@ gw_percentiles_plot <- function(data, ows = NA){
 
     min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
                                        TRUE ~ NA_real_)
-    p1 <- well_plot_perc(full_all, hist, date, years_min, water_year = data$wy, info = paste0(ow, " "))
+    p1 <- well_plot_perc(full, hist, date, years_min, water_year = data$wy, info = paste0(ow, " "))
 
     pnames <- names(p)
     p <- append(p,

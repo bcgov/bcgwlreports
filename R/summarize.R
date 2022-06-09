@@ -41,7 +41,6 @@ well_clean <- function(w, water_year_start, report_dates) {
     # Create daily averages, keeping dates and approvals
     dplyr::group_by(.data$Date, .data$Approval) %>%
     dplyr::summarise(Value = mean(.data$Value, na.rm = TRUE), .groups = "drop") %>%
-    find_continuous() %>%
     tidyr::complete(Date = !!report_dates) %>%
     # Fill in dates with missing values with NA and add various date columns
     fasstr::fill_missing_dates(water_year_start = water_year_start) %>%
@@ -49,7 +48,8 @@ well_clean <- function(w, water_year_start, report_dates) {
     # If filled with NA, make "Working" and categorize data for historic/recent
     dplyr::mutate(Approval = dplyr::if_else(is.na(.data$Approval), "Working", .data$Approval),
                   water_year_start = !!water_year_start) %>%
-    dplyr::filter(.data$DayofYear != 366)
+    dplyr::filter(.data$DayofYear != 366) %>%
+    find_continuous()
 }
 
 

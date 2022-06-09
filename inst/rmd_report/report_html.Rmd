@@ -130,7 +130,7 @@ This report was generated on `r format(Sys.Date(), "%B %d, %Y")`.
 
 The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.
 
-The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all years of data.
+The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all previous years of data.
 
 In general, a groundwater level value that is:
 
@@ -147,7 +147,7 @@ In general, a groundwater level value that is:
 * less than 10 percentile is considered 
 <span style="color: `r perc_values$colour[6]`;">**Much Below Normal**</span>
 * the lowest ever measured for the day of year is considered
-<span style="color: `r perc_values$colour[7]`;">**Low**</span>.
+<span style="color: `r perc_values$colour[7]`;">**Low**</span>
 
 ## Groundwater Level Conditions {#map}
 
@@ -417,7 +417,7 @@ w_dates %>%
 #### Percentiles
 - Percentiles are calculated individually for each day of the year for each well
 - Percentiles are calculated only with "Approved" data
-- 366 day in leap years is omitted
+- 366th day in leap years is omitted
 - "Good" quality data have 'Approved' historical values for >= `r years_min` years
 - "Poor" quality data have 'Approved' historical values for < `r years_min` 
 years and are not used (percentiles for that well on that day of the year are

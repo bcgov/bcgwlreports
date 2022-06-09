@@ -107,7 +107,12 @@ gw_data_prep <- function(ows,
 
   w_full_all <- well_prep(ows, water_year_start = 10, report_dates,
                           exclude_non_continuous = FALSE)
-  w_full <- dplyr::filter(w_full_all, .data$continuous_data)
+
+  f <- function(x) { rev(cumsum(!is.na(rev(x)))) != 0 }
+  w_full <- dplyr::filter(w_full_all, .data$continuous_data) %>%
+    dplyr::group_by(ow) %>%
+    dplyr::filter(f(Value)) %>%
+    dplyr::ungroup()
 
   message("- Summarizing historical statistics")
   w_hist <- well_hist(w_full, years_min)
