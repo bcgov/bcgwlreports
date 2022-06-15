@@ -39,49 +39,66 @@ run_shiny <- function() {
 
   # Get table information -----------------
 
-  wells_locations <- read.csv("data-raw/obswell_locations.csv", stringsAsFactors = TRUE) %>%
+  wells_locations <- read.csv("data-raw/obswell_locations.csv", stringsAsFactors = FALSE) %>%
     dplyr::arrange(Well)
+  #
+  # aquifers <- read.csv("https://apps.nrs.gov.bc.ca/gwells/api/v1/aquifers/csv") %>%
+  #   dplyr::select("aquifer_id", "subtype") %>%
+  #   dplyr::mutate(subtype = stringr::str_extract(.data$subtype,  "^[1-6]{1}[a-c]{0,1}")) %>%
+  #   dplyr::left_join(dplyr::tribble(
+  #     ~subtype, ~type,                        ~hydraulic_connectivity,
+  #     "1a",     "Unconfined sand and gravel", "Likely",
+  #     "1b",     "Unconfined sand and gravel", "Likely",
+  #     "1c",     "Unconfined sand and gravel", "Likely",
+  #     "2",      "Unconfined sand and gravel", "Likely",
+  #     "3",      "Unconfined sand and gravel", "Likely",
+  #     "4a",     "Unconfined sand and gravel", "Likely",
+  #     "4b",     "Confined sand and gravel",   "Not Likely",
+  #     "4c",     "Confined sand and gravel",   "Not Likely",
+  #     "5a",     "Sedimentary",                "Not Likely",
+  #     "5b",     "Sedimentary",                "Likely",
+  #     "6a",     "Crystalline bedrock",        "Not Likely",
+  #     "6b",     "Crystalline bedrock",        "Not Likely",
+  #     "UNK",    "Unknown",                    "Unknown"
+  #   ), by = "subtype")
+  #
+  # wells_sf <- bcdata::bcdc_query_geodata("e4731a85-ffca-4112-8caf-cb0a96905778") %>%
+  #   dplyr::filter(!is.na(.data$OBSERVATION_WELL_NUMBER)) %>%
+  #   dplyr::collect() %>%
+  #   dplyr::mutate(ow = ow_c(.data$OBSERVATION_WELL_NUMBER)) %>%
+  #   dplyr::select(Well = "ow", "aquifer_id" = "AQUIFER_ID")%>%
+  #   dplyr::mutate(Longitude = unlist(purrr::map(.data$geometry,1)),
+  #                 Latitude = unlist(purrr::map(.data$geometry,2)))
+  #
+  # wells_table_sf <- dplyr::right_join(wells_sf, wells_locations, by = "Well") %>%
+  #   dplyr::left_join(aquifers, by = "aquifer_id") %>%
+  #   dplyr::mutate(type = as.factor(type), subtype = as.factor(subtype),
+  #                 hydraulic_connectivity = as.factor(hydraulic_connectivity)) %>%
+  #   dplyr::select(Well, Area, Subarea,
+  #                 Location,
+  #                 Aquifer_Type = type,
+  #                 Aquifer_Subtype = subtype, Hydraulic_Connectivity = hydraulic_connectivity,
+  #                 Aquifer_ID = aquifer_id,
+  #                 Location_Long,#Latitude, Longitude,
+  #   )
+  # wells_table <- sf::st_drop_geometry(wells_table_sf) %>%
+  #   dplyr::mutate(Well = as.character(Well),
+  #                 Location_Long = as.character(Location_Long),
+  #                 Remarks = NA) %>%
+  #   dplyr::arrange(Well)
 
-  aquifers <- read.csv("https://apps.nrs.gov.bc.ca/gwells/api/v1/aquifers/csv") %>%
-    dplyr::select("aquifer_id", "subtype") %>%
-    dplyr::mutate(subtype = stringr::str_extract(.data$subtype,  "^[1-6]{1}[a-c]{0,1}")) %>%
-    dplyr::left_join(dplyr::tribble(
-      ~subtype, ~type,                        ~hydraulic_connectivity,
-      "1a",     "Unconfined sand and gravel", "Likely",
-      "1b",     "Unconfined sand and gravel", "Likely",
-      "1c",     "Unconfined sand and gravel", "Likely",
-      "2",      "Unconfined sand and gravel", "Likely",
-      "3",      "Unconfined sand and gravel", "Likely",
-      "4a",     "Unconfined sand and gravel", "Likely",
-      "4b",     "Confined sand and gravel",   "Not Likely",
-      "4c",     "Confined sand and gravel",   "Not Likely",
-      "5a",     "Sedimentary",                "Not Likely",
-      "5b",     "Sedimentary",                "Likely",
-      "6a",     "Crystalline bedrock",        "Not Likely",
-      "6b",     "Crystalline bedrock",        "Not Likely",
-      "UNK",    "Unknown",                    "Unknown"
-    ), by = "subtype")
-
-  wells_sf <- bcdata::bcdc_query_geodata("e4731a85-ffca-4112-8caf-cb0a96905778") %>%
-    dplyr::filter(!is.na(.data$OBSERVATION_WELL_NUMBER)) %>%
-    dplyr::collect() %>%
-    dplyr::mutate(ow = ow_c(.data$OBSERVATION_WELL_NUMBER)) %>%
-    dplyr::select(Well = "ow", "aquifer_id" = "AQUIFER_ID")%>%
-    dplyr::mutate(Longitude = unlist(purrr::map(.data$geometry,1)),
-                  Latitude = unlist(purrr::map(.data$geometry,2)))
-
-  wells_table_sf <- dplyr::right_join(wells_sf, wells_locations, by = "Well") %>%
-    dplyr::left_join(aquifers, by = "aquifer_id") %>%
-    dplyr::mutate(type = as.factor(type), subtype = as.factor(subtype),
-                  hydraulic_connectivity = as.factor(hydraulic_connectivity)) %>%
-    dplyr::select(Well, Area, Subarea,
-                  Location,
-                  Aquifer_Type = type,
-                  Aquifer_Subtype = subtype, Hydraulic_Connection = hydraulic_connectivity,
-                  Aquifer_ID = aquifer_id,
-                  Location_Long#,Latitude, Longitude
-    )
-  wells_table <- sf::st_drop_geometry(wells_table_sf)
+  wells_table_sf <- readRDS("data-raw/obswell_info.rds") %>%
+    dplyr::filter(Well_Number %in% wells_locations$Well) %>%
+    dplyr::select(-Report) %>%
+    dplyr::rename(Well = Well_Number) %>%
+    dplyr::mutate(Aquifer_Type = as.factor(Aquifer_Type),
+                  Aquifer_Subtype = as.factor(Aquifer_Subtype),
+                  Hydraulic_Connectivity = as.factor(Hydraulic_Connectivity))
+  wells_table <- sf::st_drop_geometry(wells_table_sf) %>%
+    dplyr::mutate(Well = as.character(Well),
+                  Location_Long = as.character(Location_Long),
+                  Remarks = NA) %>%
+    dplyr::arrange(Well)
 
   # Other setup -----------------
 
@@ -89,7 +106,7 @@ run_shiny <- function() {
     "None" = "None",
     "Aquifer Type" = "Aquifer_Type",
     "Aquifer Subtype" = "Aquifer_Subtype",
-    "Hydraulic Connection" = "Hydraulic_Connection")
+    "Hydraulic Connection" = "Hydraulic_Connectivity")
 
 
 
@@ -114,6 +131,7 @@ run_shiny <- function() {
                       box(
                         width = 3,
                         helpText("insert text"),
+                        helpText("can copy paste cells from excel into wells"),
                         hr(),
                         h4(strong("Wells")),
                         uiOutput("wells_selectize"),
@@ -121,15 +139,16 @@ run_shiny <- function() {
                         #          column(width = 3, br(), actionButton("add_reg_wells","Add"))),
                         # fluidRow(column(width = 9, uiOutput("subregion_wells")),
                         #          column(width = 3, br(), actionButton("add_subreg_wells","Add"))),
-                        actionButton("add_table_wells","Add Wells from Table"),
-                        actionButton("clear_all_wells","Remove all Wells"),
+                        actionButton("add_table_wells","Add Filtered Wells from Table"),
+                        actionButton("add_tablesel_wells","Add Selected Wells from Table"),
+                        actionButton("clear_all_wells","Clear all Wells"), br(),br(),
                         selectInput("point_colour", label = "Well Map Colours:",
                                     choices = maps_points),
                         hr(),
                         h4(strong("Options")),
                         fluidRow(column(width = 6, dateInput("date_select", "Reporting date:", max = Sys.Date())),
                                  column(width = 6, numericInput("window_days", "Date window (+/- days):", value = 13, min = 0, max = 100))),
-                        h5(textOutput("window_dates")),
+                        h5(verbatimTextOutput("window_dates")),
                         checkboxInput("two_weeks", "Compare values to 2 weeks ago", FALSE),
                         numericInput("min_years", "Minimum number of years:", value = 5, min = 5, max = 100),
 
@@ -138,8 +157,13 @@ run_shiny <- function() {
                         uiOutput("report_title"),
                         uiOutput("report_description"),
                         #  actionButton("out_dir2", "Build Report"),
-                        shinyFiles::shinyDirButton('out_dir', 'Location to save', 'Please select a folder', FALSE),
-                        actionButton("gen_report_button", "Build Report")
+                        h4(strong("Report File")),
+                        uiOutput("report_name"),
+                        shinyFiles::shinyDirButton('out_dir', 'Select location to save', 'Please select a folder', FALSE),br(),
+                        h5("Location:"),
+                        verbatimTextOutput("out_dir_print"),hr(),
+                        fluidRow(column(width = 4),
+                                 column(width = 8, actionButton("gen_report_button", "Build"))),br(),br()
 
 
 
@@ -161,9 +185,67 @@ run_shiny <- function() {
                         tabPanel(
                           title = "Table",
                           h4("map above, not showing percentiles colours, but other options"),
-                       #   leaflet::leafletOutput("wells_map"),
+                          h4("LIST WELLS NOT IN OUTPUT"),
+                          #   leaflet::leafletOutput("wells_map"),
                           DT::dataTableOutput("locations"),
                           verbatimTextOutput("test")
+                        ),
+                        tabPanel(
+                          title = "test"#,
+                          #includeHTML("C:/Users/jgoetz/Desktop/South Natural Resource Area_2022-06-15_2022-06-15.html")
+                        ),
+                        tabPanel(
+                          title = "Preview",
+                          actionButton("gen_preview_button", "Preview"),
+                          h2(textOutput("prev_title")),
+                          textOutput("prev_desc"),
+                          br(),
+                          "This report was generated on ", format(Sys.Date(), format = '%B %d, %Y'),".",
+                          hr(),
+                          h3("Background"),
+                          "The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.",
+                          br(),br(),
+                          "The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all previous years of data.",
+                          br(),br(),
+                          "In general, a groundwater level value that is:",
+                          tags$ul(
+                            tags$li("the highest ever measured for the day of year is considered **High**"),
+                            tags$li("greater than the 90th percentile is considered **Much Above Normal**"),
+                            tags$li("between 75th percentile and 90th percentile is considered **Above Normal**"),
+                            tags$li("between 25th and 75th percentiles is considered **Normal**"),
+                            tags$li("less than the 25 percentile is considered **Below Normal**"),
+                            tags$li("less than 10 percentile is considered **Much Below Normal**"),
+                            tags$li("the lowest ever measured for the day of year is considered **Low**")
+                          ),
+
+                          hr(),h3("Groundwater Level Conditions"),
+                          #map
+                          gt::gt_output("ptile_class_table"),
+
+                          hr(),h3("Wells Below Normal"),
+                          "This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.",
+                          br(),br(),
+                          tabsetPanel(tabPanel("All Wells", br(),
+                                          gt::gt_output("belnorm_all")),
+                                 tabPanel("By Hydraulic Connectivity", br(),
+                                          gt::gt_output("belnorm_hc")),
+                                 tabPanel("By Aquifer Type", br(),
+                                          gt::gt_output("belnorm_aq"))),
+
+                          hr(),h3("Latest Details"),
+                          gt::gt_output("latest_details"),
+
+                          hr(),h3("Historical Water Level Plots"),
+                          "Annual hydrographs and historical records for the observation wells summarized above can be found in this section.",
+                          br(),br(),
+                          "Current conditions for provincial groundwater observation wells can be accessed any time through the Groundwater Level Data Interactive Map.",
+                          br(),br(),
+                          "Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as ‘Working’ and what will become the official record.",
+                          br(),
+                          uiOutput("well_plot_selected"),
+                          helpText("put the meta info here"),
+                          plotOutput("well_plot_ptile_preview"),
+                          plotOutput("well_plot_record_preview")
                         )
                       )
                     )
@@ -207,16 +289,29 @@ run_shiny <- function() {
     #   data_aquifers()
     # })
     output$test <- renderText({
-      # unique(wells_locations$Area[input$locations_rows_all])
-      # req(input$out_dir)
-      # myblue
+     # areas_list2()
+      input$well_plot_selected
+    })
+
+    output$out_dir_print <- renderPrint({
+      #  paste0(out_dir(),"/",input$report_name,".html")
+      out_dir()
+    })
+
+    out_dir <- reactive({
+      if (is.integer(input$out_dir)) {
+        cat("No directory has been selected.")
+      } else {
+        shinyFiles::parseDirPath(volumes, input$out_dir)
+      }
     })
 
     output$wells_selectize <- renderUI(
       selectizeInput(inputId = "wells_selectize",
                      label = "Wells to include:",
                      choices = wells_locations$Well,
-                     multiple = TRUE)
+                     multiple = TRUE,
+                     options = list(delimiter = " ", create = T))
     )
 
     output$region_wells <- renderUI(
@@ -239,6 +334,10 @@ run_shiny <- function() {
     observeEvent(input$add_table_wells, {
       updateSelectizeInput(session, "wells_selectize",
                            selected = wells_locations$Well[input$locations_rows_all])
+    })
+    observeEvent(input$add_tablesel_wells, {
+      updateSelectizeInput(session, "wells_selectize",
+                           selected = wells_locations$Well[input$locations_rows_selected])
     })
     observeEvent(input$clear_all_wells, {
       updateSelectizeInput(session, "wells_selectize",
@@ -265,6 +364,29 @@ run_shiny <- function() {
 
 
     # Report ---------
+
+    areas_list <- reactive({
+      # levels(areas_list())[unique(wells_locations$Area[input$locations_rows_all])]
+      #as.character(unique(wells_locations$Area[input$locations_rows_all]))[1]#[unique(wells_locations$Area[input$locations_rows_all])]
+      #  as.numeric(unique(wells_locations$Area[input$locations_rows_all]))
+      #  as.character(unique(wells_locations$Area[input$locations_rows_all]))[as.integer(unique(wells_locations$Area[input$locations_rows_all]))]
+      unique(as.character(wells_table$NR_Area[input$locations_rows_all]))
+      #  input$locations_rows_all
+
+    })
+
+
+    areas_list2 <- reactive({
+      # levels(areas_list())[unique(wells_locations$Area[input$locations_rows_all])]
+      #as.character(unique(wells_locations$Area[input$locations_rows_all]))[1]#[unique(wells_locations$Area[input$locations_rows_all])]
+      #  as.numeric(unique(wells_locations$Area[input$locations_rows_all]))
+      #  as.character(unique(wells_locations$Area[input$locations_rows_all]))[as.integer(unique(wells_locations$Area[input$locations_rows_all]))]
+      unique(as.character(wells_table$NR_Area[input$locations_rows_selected]))
+      #  input$locations_rows_all
+
+    })
+
+
     output$report_title <- renderUI({
       # if (is.null(input$region_wells)) {
       #   title <- "Provide title, ex. Groundwater Level Conditions"
@@ -273,10 +395,10 @@ run_shiny <- function() {
       # } else {
       #   title <- "BC Groundwater Level Conditions"
       # }
-      if (length(unique(wells_locations$Area[input$locations_rows_all])) == 4) {
+      if (length(areas_list()) == 4) {
         title <- "BC Groundwater Level Conditions"
-      } else if (length(unique(wells_locations$Area[input$locations_rows_all])) == 1) {
-        title <- paste0(unique(wells_locations$Area[input$locations_rows_all]), " Groundwater Level Conditions")
+      } else if (length(areas_list()) == 1) {
+        title <- paste0(areas_list(), " Groundwater Level Conditions")
       } else {
         title <- "BC Groundwater Level Conditions"
       }
@@ -297,18 +419,18 @@ run_shiny <- function() {
       #                                "in various observation wells as of ", format(input$date_select, format = "%B %d, %Y"), ".")
       # }
 
-      if (length(unique(wells_locations$Subarea[input$locations_rows_all])) == 1) {
-        Subarea <- paste0(unique(wells_locations$Subarea[input$locations_rows_all]), " region of the ")
+      if (length(unique(wells_table$NR_Subarea[input$locations_rows_all])) == 1) {
+        Subarea <- paste0(unique(wells_table$NR_Subarea[input$locations_rows_all]), " region of the ")
       } else {
         Subarea <- ""
       }
 
-      if (length(unique(wells_locations$Area[input$locations_rows_all])) == 4) {
+      if (length(areas_list()) == 4) {
         report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                                      "in BC observation wells as of ", format(input$date_select, format = "%B %d, %Y"), ".")
-      } else if (length(unique(wells_locations$Area[input$locations_rows_all])) == 1) {
+      } else if (length(areas_list()) == 1) {
         report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
-                                     "in the ", Subarea, unique(wells_locations$Area[input$locations_rows_all])," as of ", format(input$date_select, format = "%B %d, %Y"), ".")
+                                     "in the ", Subarea, areas_list()," as of ", format(input$date_select, format = "%B %d, %Y"), ".")
       } else {
         report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                                      "in BC observation wells as of ", format(input$date_select, format = "%B %d, %Y"), ".")
@@ -318,7 +440,26 @@ run_shiny <- function() {
                     "Report description:",
                     value =  report_description, rows = 2)
     })
+    output$report_name <- renderUI({
+      # if (is.null(input$region_wells)) {
+      #   title <- "Provide title, ex. Groundwater Level Conditions"
+      # } else if (length(input$region_wells) == 1) {
+      #   title <- paste0(input$region_wells, " Groundwater Level Conditions")
+      # } else {
+      #   title <- "BC Groundwater Level Conditions"
+      # }
+      if (length(areas_list()) == 4) {
+        title <- paste0("report_", Sys.Date())
+      } else if (length(areas_list()) == 1) {
+        title <- paste0(areas_list(), "_", Sys.Date())
+      } else {
+        title <- paste0("report_", Sys.Date())
+      }
 
+      textInput("report_name",
+                "HTML report file name:",
+                value =  title)
+    })
 
     output$window_dates <- renderPrint({
 
@@ -335,9 +476,10 @@ run_shiny <- function() {
       }
     })
 
-    volumes <- shinyFiles::getVolumes()
-    shinyFiles::shinyDirChoose(input, 'out_dir', roots=volumes, filetypes=c('', 'txt')) #c(wd='.')
-
+    # volumes <- shinyFiles::getVolumes()
+    volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
+    #  shinyFiles::shinyDirChoose(input, 'out_dir', roots=volumes, filetypes=c('', 'txt')) #c(wd='.')
+    shinyFiles::shinyDirChoose(input, "out_dir", roots = volumes, session = session, restrictions = system.file(package = "base"), allowDirCreate = FALSE)
     # observe({
     #   shinyFiles::shinyDirChoose(input, "out_dir", roots = volumes, session = session)
     #   if(!is.null(input$out_dir)){
@@ -349,20 +491,98 @@ run_shiny <- function() {
 
     output$locations <- DT::renderDataTable({
       wells_table %>%
-        dplyr::mutate(Well = as.character(Well),
-                      Location_Long = as.character(Location_Long),
-                      Remarks = NA) %>%
-        #  dplyr::filter(Well %in% input$wells_selectize) %>%
-        dplyr::arrange(Well) %>%
+        dplyr::mutate(NR_Area = as.factor(NR_Area), NR_Subarea = as.factor(NR_Subarea)) %>%
+        dplyr::select(Well, NR_Area, NR_Subarea, Location, Location_Long,
+                      Aquifer_ID, Aquifer_Subtype, Aquifer_Type, Hydraulic_Connectivity,
+                      Latitude, Longitude, Well_Status,
+                      dplyr::everything()) %>%
         DT::datatable(rownames = FALSE,
                       filter = 'top',
                       extensions = c("Scroller", "Buttons"),
-                      selection = "single",
+                      selection = "multiple",
                       editable = list(target = "column", disable = list(columns = c(0:4))),
                       options = list(scrollX = TRUE, scrollY = 450, scroller = TRUE,
                                      deferRender = TRUE, dom = 'Brtip',
                                      buttons = list(list(extend = 'copy', title = NULL),
                                                     'csv', 'excel')))
+    })
+
+    output$prev_title <- renderText({
+      input$report_title
+    })
+    output$prev_desc <- renderText({
+      input$report_description
+    })
+
+
+    observeEvent(input$gen_report_button, {
+      # session$sendCustomMessage(type = 'testmessage',
+      #                           message = 'Thank you for clicking')
+      req(input$wells_selectize, input$out_dir)
+      showModal(modalDialog("Building HTML report file. Please be patient, this may take several minutes.", footer=NULL))
+      well_report(ows = input$wells_selectize,
+                  report_dates = input$date_select,
+                  title = input$report_title,
+                  description = input$report_description,
+                  n_days = input$window_days,
+                  years_min = input$min_years,
+                  out_dir = out_dir(),
+                  cache_age = 7,
+                  name = input$report_name)
+      removeModal()
+      showModal(modalDialog(HTML(paste0("Finished! Your report can be found here:.<br>",
+                                        out_dir(),"/",input$report_name,".html"))))
+
+    })
+
+    gw_data_wells <- eventReactive(input$gen_preview_button, {
+     # req(input$wells_selectize)
+      gw_data_prep(ows = input$wells_selectize,
+                   report_dates = input$date_select,
+                   n_days = input$window_days,
+                   years_min = input$min_years,
+                   cache_age = 7)
+    })
+
+    output$ptile_class_table <- gt::render_gt({
+      gw_percentile_class_table(gw_data_wells(), gt = TRUE)
+    })
+
+    output$belnorm_all <- gt::render_gt({
+      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "totals")
+    })
+    output$belnorm_hc <- gt::render_gt({
+      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "hydraulic_connectivity")
+    })
+    output$belnorm_aq <- gt::render_gt({
+      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "type")
+    })
+    output$latest_details <- gt::render_gt({
+      gw_percentiles_details_table(gw_data_wells(), gt = TRUE)
+    })
+
+
+    output$well_plot_selected <- renderUI({
+      selectInput("well_plot_selected",
+                  "Well to Plot:",
+                  choices = gw_data_wells()$details$ow)
+    })
+
+    plot_ptile_preview <- reactive({
+      gw_percentiles_plot(gw_data_wells())
+    })
+    output$well_plot_ptile_preview <- renderPlot({
+      req(input$well_plot_selected)
+      plot_ptile_preview()[[input$well_plot_selected]]
+    })
+
+    plot_record_preview <- reactive({
+      gw_historic_data_plot(gw_data_wells())
+    })
+    output$well_plot_record_preview <- renderPlot({
+      req(input$well_plot_selected)
+      plot_record_preview()[[input$well_plot_selected]]
+     # gw_historic_data_plot(gw_data_wells(), ows = input$well_plot_selected)[[1]]
     })
 
   }

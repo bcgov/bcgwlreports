@@ -1,0 +1,41 @@
+
+### GAP FILL SMALL GAPS???
+
+
+# Trouble well
+wells <- c('OW296')
+
+# Good wells
+wells <- c('OW075')
+wells <- c('OW400')
+wells <- c("OW089","OW217", "OW306", "OW074", "OW291", "OW309", "OW362", "OW363", "OW468", "OW444")
+wells <- c("OW217", "OW306", "OW074", "OW291", "OW309", "OW362", "OW363", "OW468", "OW444",'OW296')
+wells <- get_obs_in_area(nr_area = "West Coast Region")
+
+gw_data <- gw_data_prep(ows = wells)#c(Sys.Date()- 14))
+gw_data
+data <- gw_data$w_full_all
+
+gw_percentile_map(gw_data)
+gw_percentile_class_table(gw_data, gt = TRUE)
+gw_percentile_class_table(gw_data, gt = FALSE)
+gw_wells_below_normal_table(gw_data, which = "totals", gt = TRUE)
+gw_wells_below_normal_table(gw_data, which = "totals", gt = FALSE)
+gw_wells_below_normal_table(gw_data, which = "hydraulic_connectivity", gt = TRUE)
+gw_wells_below_normal_table(gw_data, which = "hydraulic_connectivity", gt = FALSE)
+gw_wells_below_normal_table(gw_data, which = "type", gt = TRUE)
+gw_wells_below_normal_table(gw_data, which = "type", gt = FALSE)
+gw_percentiles_details_table(gw_data, gt = TRUE)
+gw_percentiles_details_table(gw_data, gt = FALSE)
+gw_percentiles_plot(gw_data)
+gw_percentiles_plot(gw_data, ows = "OW362")
+gw_percentiles_plot(gw_data, ows = "OW075")
+gw_percentiles_plot(gw_data, ows = "OW400")
+gw_historic_data_plot(gw_data)
+gw_historic_data_plot(gw_data, ows = "OW075")
+gw_historic_data_plot(gw_data, ows = "OW400")
+t <- gw_both_plots(gw_data)
+gw_both_plots(gw_data, ows = "OW089")
+gw_both_plots(gw_data, ows = "OW217")
+gw_both_plots(gw_data, ows = "OW400")
+
