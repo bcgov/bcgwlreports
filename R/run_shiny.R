@@ -109,9 +109,7 @@ run_shiny <- function() {
     "Hydraulic Connection" = "Hydraulic_Connectivity")
 
 
-
-
-  # Define UI for application that draws a histogram
+  # ui ------
   ui <- tagList(
     dashboardPage(
       dashboardHeader(title = "bcgwlreports"),
@@ -165,23 +163,11 @@ run_shiny <- function() {
                         fluidRow(column(width = 4),
                                  column(width = 8, actionButton("gen_report_button", "Build"))),br(),br()
 
-
-
-                        # ows,
-                        # name = "report",
-                        # report_dates = Sys.Date(),
-                        # title = NULL,
-                        # description = NULL,
-                        # remarks = NULL,
-                        # n_days = 13,
-                        # years_min = 5,
-                        # out_dir = ".",
-                        # cache_age = 7
                       ),
                       tabBox(
                         width = 9,
 
-                        ## Plot ---------------------
+                        ## Main Table ---------------------
                         tabPanel(
                           title = "Table",
                           h4("map above, not showing percentiles colours, but other options"),
@@ -190,10 +176,14 @@ run_shiny <- function() {
                           DT::dataTableOutput("locations"),
                           verbatimTextOutput("test")
                         ),
+
+                        ## Test ---------------------
                         tabPanel(
                           title = "test"#,
                           #includeHTML("C:/Users/jgoetz/Desktop/South Natural Resource Area_2022-06-15_2022-06-15.html")
                         ),
+
+                        ## Report Prevview ---------------------
                         tabPanel(
                           title = "Preview",
                           actionButton("gen_preview_button", "Preview"),
@@ -279,7 +269,7 @@ run_shiny <- function() {
   )
 
 
-  # Define server logic required to draw a histogram
+  # server ------
   server <- function(input, output, session) {
 
 
@@ -293,18 +283,7 @@ run_shiny <- function() {
       input$well_plot_selected
     })
 
-    output$out_dir_print <- renderPrint({
-      #  paste0(out_dir(),"/",input$report_name,".html")
-      out_dir()
-    })
-
-    out_dir <- reactive({
-      if (is.integer(input$out_dir)) {
-        cat("No directory has been selected.")
-      } else {
-        shinyFiles::parseDirPath(volumes, input$out_dir)
-      }
-    })
+    # Main UI Objects ----------------
 
     output$wells_selectize <- renderUI(
       selectizeInput(inputId = "wells_selectize",
@@ -361,9 +340,27 @@ run_shiny <- function() {
                            selected = '')
     })
 
+    # Main Table----------------
 
+    output$locations <- DT::renderDataTable({
+      wells_table %>%
+        dplyr::mutate(NR_Area = as.factor(NR_Area), NR_Subarea = as.factor(NR_Subarea)) %>%
+        dplyr::select(Well, NR_Area, NR_Subarea, Location, Location_Long,
+                      Aquifer_ID, Aquifer_Subtype, Aquifer_Type, Hydraulic_Connectivity,
+                      Latitude, Longitude, Well_Status,
+                      dplyr::everything()) %>%
+        DT::datatable(rownames = FALSE,
+                      filter = 'top',
+                      extensions = c("Scroller", "Buttons"),
+                      selection = "multiple",
+                      editable = list(target = "column", disable = list(columns = c(0:4))),
+                      options = list(scrollX = TRUE, scrollY = 450, scroller = TRUE,
+                                     deferRender = TRUE, dom = 'Brtip',
+                                     buttons = list(list(extend = 'copy', title = NULL),
+                                                    'csv', 'excel')))
+    })
 
-    # Report ---------
+    # Report Objects----------------
 
     areas_list <- reactive({
       # levels(areas_list())[unique(wells_locations$Area[input$locations_rows_all])]
@@ -374,18 +371,6 @@ run_shiny <- function() {
       #  input$locations_rows_all
 
     })
-
-
-    areas_list2 <- reactive({
-      # levels(areas_list())[unique(wells_locations$Area[input$locations_rows_all])]
-      #as.character(unique(wells_locations$Area[input$locations_rows_all]))[1]#[unique(wells_locations$Area[input$locations_rows_all])]
-      #  as.numeric(unique(wells_locations$Area[input$locations_rows_all]))
-      #  as.character(unique(wells_locations$Area[input$locations_rows_all]))[as.integer(unique(wells_locations$Area[input$locations_rows_all]))]
-      unique(as.character(wells_table$NR_Area[input$locations_rows_selected]))
-      #  input$locations_rows_all
-
-    })
-
 
     output$report_title <- renderUI({
       # if (is.null(input$region_wells)) {
@@ -488,25 +473,6 @@ run_shiny <- function() {
     #   }
     # })
 
-
-    output$locations <- DT::renderDataTable({
-      wells_table %>%
-        dplyr::mutate(NR_Area = as.factor(NR_Area), NR_Subarea = as.factor(NR_Subarea)) %>%
-        dplyr::select(Well, NR_Area, NR_Subarea, Location, Location_Long,
-                      Aquifer_ID, Aquifer_Subtype, Aquifer_Type, Hydraulic_Connectivity,
-                      Latitude, Longitude, Well_Status,
-                      dplyr::everything()) %>%
-        DT::datatable(rownames = FALSE,
-                      filter = 'top',
-                      extensions = c("Scroller", "Buttons"),
-                      selection = "multiple",
-                      editable = list(target = "column", disable = list(columns = c(0:4))),
-                      options = list(scrollX = TRUE, scrollY = 450, scroller = TRUE,
-                                     deferRender = TRUE, dom = 'Brtip',
-                                     buttons = list(list(extend = 'copy', title = NULL),
-                                                    'csv', 'excel')))
-    })
-
     output$prev_title <- renderText({
       input$report_title
     })
@@ -514,6 +480,18 @@ run_shiny <- function() {
       input$report_description
     })
 
+    output$out_dir_print <- renderPrint({
+      #  paste0(out_dir(),"/",input$report_name,".html")
+      out_dir()
+    })
+
+    out_dir <- reactive({
+      if (is.integer(input$out_dir)) {
+        cat("No directory has been selected.")
+      } else {
+        shinyFiles::parseDirPath(volumes, input$out_dir)
+      }
+    })
 
     observeEvent(input$gen_report_button, {
       # session$sendCustomMessage(type = 'testmessage',
@@ -534,6 +512,11 @@ run_shiny <- function() {
                                         out_dir(),"/",input$report_name,".html"))))
 
     })
+
+
+
+
+    # Preview Objects----------------
 
     gw_data_wells <- eventReactive(input$gen_preview_button, {
      # req(input$wells_selectize)
