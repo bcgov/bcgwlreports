@@ -129,7 +129,7 @@ gw_data_prep <- function(ows,
 
 
 
-  message("- Creating list")
+  message("- Creating list of objects")
 
 
   window <- w_perc %>%

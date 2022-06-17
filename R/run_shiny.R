@@ -113,142 +113,178 @@ run_shiny <- function() {
   ui <- tagList(
     dashboardPage(
       dashboardHeader(title = "bcgwlreports"),
-      dashboardSidebar(sidebarMenu(
-        id = "menu",
-        menuItem("Build Report", tabName = "report", icon = icon("home")),
-        menuItem("Data", tabName = "data", icon = icon("table"),
-                 menuSubItem("Tab 1", tabName = "Sub1"),
-                 menuSubItem("Tab 2", tabName = "Sub2")))),
+      dashboardSidebar(disable = TRUE#,
+                       # sidebarMenu(
+                       #   id = "menu",
+                       #   menuItem("Build Report", tabName = "report", icon = icon("home")),
+                       #   menuItem("Data", tabName = "data", icon = icon("table"),
+                       #            menuSubItem("Tab 1", tabName = "Sub1"),
+                       #            menuSubItem("Tab 2", tabName = "Sub2")))
+      ),
       dashboardBody(
+        # fluidPage(
         if(css != "") includeCSS(css),
-        tabItems(
-          tabItem("report",
-                  fluidRow(
-                    column(
-                      width = 12, h2("Title 1"),
-                      box(
-                        width = 3,
-                        helpText("insert text"),
-                        helpText("can copy paste cells from excel into wells"),
-                        hr(),
-                        h4(strong("Wells")),
-                        uiOutput("wells_selectize"),
-                        # fluidRow(column(width = 9, uiOutput("region_wells")),
-                        #          column(width = 3, br(), actionButton("add_reg_wells","Add"))),
-                        # fluidRow(column(width = 9, uiOutput("subregion_wells")),
-                        #          column(width = 3, br(), actionButton("add_subreg_wells","Add"))),
-                        actionButton("add_table_wells","Add Filtered Wells from Table"),
-                        actionButton("add_tablesel_wells","Add Selected Wells from Table"),
-                        actionButton("clear_all_wells","Clear all Wells"), br(),br(),
-                        selectInput("point_colour", label = "Well Map Colours:",
-                                    choices = maps_points),
-                        hr(),
-                        h4(strong("Options")),
-                        fluidRow(column(width = 6, dateInput("date_select", "Reporting date:", max = Sys.Date())),
-                                 column(width = 6, numericInput("window_days", "Date window (+/- days):", value = 13, min = 0, max = 100))),
-                        h5(verbatimTextOutput("window_dates")),
-                        checkboxInput("two_weeks", "Compare values to 2 weeks ago", FALSE),
-                        numericInput("min_years", "Minimum number of years:", value = 5, min = 5, max = 100),
+        #    titlePanel("bcgwlreports"),
+        #  tabItems(
+        #    tabItem("report",
+        #     mainPanel(
+        fluidRow(
+          column(
+            width = 12, br(),
+            box(
+              width = 3,
+              helpText("insert text"),
+              helpText("can copy paste cells from excel into wells"),
+              "fix preview where have to load build tab UI first",
+              hr(),
+              h4(strong("Wells")),
+              uiOutput("wells_selectize"),
+              # fluidRow(column(width = 9, uiOutput("region_wells")),
+              #          column(width = 3, br(), actionButton("add_reg_wells","Add"))),
+              # fluidRow(column(width = 9, uiOutput("subregion_wells")),
+              #          column(width = 3, br(), actionButton("add_subreg_wells","Add"))),
+              fluidRow(column(width=12, actionButton("clear_all_wells","Clear all wells from list",
+                                                     icon = icon("minus", lib = "glyphicon")))),
+              br(),
+              fluidRow(column(width=12, actionButton("add_table_wells","Add filtered wells from table",
+                                                     icon = icon("plus", lib = "glyphicon")))),
+              br(),
+              fluidRow(column(width=12, actionButton("add_tablesel_wells","Add selected wells from table",
+                                                     icon = icon("plus", lib = "glyphicon")))),
+              br(),
+              fluidRow(column(width=12, actionButton("download_data","Download well water level data",
+                                                     icon = icon("download-alt", lib = "glyphicon")))),
+              hr(),
+              #  h4(strong("Map Options")),
+              h4(strong(shinyWidgets::materialSwitch(inputId = "show_map_options",
+                                                     label = "Map Options",
+                                                     status = "primary",
+                                                     value = FALSE))),
+              # div(id = "map_options",
+              conditionalPanel(
+                "input.show_map_options",
+                fluidRow(column(width=6,selectInput("point_colour", label = "Well Map Colours:", choices = maps_points))),
+                hr()),
+              #  h4(strong("Percentile Reporting Options")),
+              # h4(strong("Percentile Reporting Options")),
+              h4(strong(shinyWidgets::materialSwitch(inputId = "show_reporting_options",
+                                                     label = "Percentile Reporting Options",
+                                                     status = "primary",
+                                                     value = FALSE))),
+              conditionalPanel(
+                "input.show_reporting_options",
+                fluidRow(column(width = 6, dateInput("date_select", "Reporting date:", max = Sys.Date())),
+                         column(width = 6, numericInput("window_days", "Date window (+/- days):", value = 14, min = 0, max = 100))),
+                h5(verbatimTextOutput("window_dates")),
+                checkboxInput("two_weeks", "Compare values to 2 weeks ago", FALSE),
+                numericInput("min_years", "Minimum number of years:", value = 5, min = 5, max = 100),
+              ),
+              hr()
 
-                        hr(),
-                        h4(strong("Report Details")),
-                        uiOutput("report_title"),
-                        uiOutput("report_description"),
-                        #  actionButton("out_dir2", "Build Report"),
-                        h4(strong("Report File")),
-                        uiOutput("report_name"),
-                        shinyFiles::shinyDirButton('out_dir', 'Select location to save', 'Please select a folder', FALSE),br(),
-                        h5("Location:"),
-                        verbatimTextOutput("out_dir_print"),hr(),
-                        fluidRow(column(width = 4),
-                                 column(width = 8, actionButton("gen_report_button", "Build"))),br(),br()
+            ),
+            tabBox(
+              width = 9,
 
-                      ),
-                      tabBox(
-                        width = 9,
+              ## Main Table ---------------------
+              tabPanel(
+                title = "Table",
+                h4("map above, not showing percentiles colours, but other options"),
+                h4("LIST WELLS NOT IN OUTPUT"),
+                #   leaflet::leafletOutput("wells_map"),
+                DT::dataTableOutput("locations"),
+                verbatimTextOutput("test")
+              ),
+              tabPanel(
+                title = "Well Summary",
+                h4("plotly plots of well data, map with aquifer?")
+              ),
 
-                        ## Main Table ---------------------
-                        tabPanel(
-                          title = "Table",
-                          h4("map above, not showing percentiles colours, but other options"),
-                          h4("LIST WELLS NOT IN OUTPUT"),
-                          #   leaflet::leafletOutput("wells_map"),
-                          DT::dataTableOutput("locations"),
-                          verbatimTextOutput("test")
-                        ),
+              ## Report Prevview ---------------------
+              tabPanel(
+                title = "Preview Report",
+              #  checkboxInput("inc_plots", "Preview plots? (unchecking may save time if viewing just tables)", value = TRUE),
+               # actionButton("gen_preview_button", "Preview Report",
+              #               icon = icon("eye-open", lib = "glyphicon")),
+                br(),
+                h2(textOutput("prev_title")),
+                textOutput("prev_desc"),
+                br(),
+                "This report was generated on ", format(Sys.Date(), format = '%B %d, %Y'),".",
+                hr(),
+                h3("Background"),
+                "The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.",
+                br(),br(),
+                "The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all previous years of data.",
+                br(),br(),
+                "In general, a groundwater level value that is:",
+                tags$ul(
+                  tags$li("the highest ever measured for the day of year is considered **High**"),
+                  tags$li("greater than the 90th percentile is considered **Much Above Normal**"),
+                  tags$li("between 75th percentile and 90th percentile is considered **Above Normal**"),
+                  tags$li("between 25th and 75th percentiles is considered **Normal**"),
+                  tags$li("less than the 25 percentile is considered **Below Normal**"),
+                  tags$li("less than 10 percentile is considered **Much Below Normal**"),
+                  tags$li("the lowest ever measured for the day of year is considered **Low**")
+                ),
 
-                        ## Test ---------------------
-                        tabPanel(
-                          title = "test"#,
-                          #includeHTML("C:/Users/jgoetz/Desktop/South Natural Resource Area_2022-06-15_2022-06-15.html")
-                        ),
+                hr(),h3("Groundwater Level Conditions"),
+                #map
+                gt::gt_output("ptile_class_table"),
 
-                        ## Report Prevview ---------------------
-                        tabPanel(
-                          title = "Preview",
-                          actionButton("gen_preview_button", "Preview"),
-                          h2(textOutput("prev_title")),
-                          textOutput("prev_desc"),
-                          br(),
-                          "This report was generated on ", format(Sys.Date(), format = '%B %d, %Y'),".",
-                          hr(),
-                          h3("Background"),
-                          "The province maintains a network of groundwater observation wells to monitor water levels in priority aquifers. These observation wells (OW) record water level fluctuations which allow for improved understanding of how aquifers respond to changes in climate, precipitation, and effects from pumping. Many of the observation wells are equipped with satellite telemetry to provide real time information on water levels.",
-                          br(),br(),
-                          "The following summaries compare recent groundwater levels to all historical continuous daily records to determine percentile classes, with a minimum of `r years_min` years of data. Historical monthly water level samples (before ~2004) are not included. A percentile is on a scale of 100 and indicates the percent of a distribution that is equal to or below it. For example, a groundwater level at the 10th percentile is equal to or greater than 10% of the water level values recorded on this day of the year during all previous years of data.",
-                          br(),br(),
-                          "In general, a groundwater level value that is:",
-                          tags$ul(
-                            tags$li("the highest ever measured for the day of year is considered **High**"),
-                            tags$li("greater than the 90th percentile is considered **Much Above Normal**"),
-                            tags$li("between 75th percentile and 90th percentile is considered **Above Normal**"),
-                            tags$li("between 25th and 75th percentiles is considered **Normal**"),
-                            tags$li("less than the 25 percentile is considered **Below Normal**"),
-                            tags$li("less than 10 percentile is considered **Much Below Normal**"),
-                            tags$li("the lowest ever measured for the day of year is considered **Low**")
-                          ),
+                hr(),h3("Wells Below Normal"),
+                "This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.",
+                br(),br(),
+                tabsetPanel(tabPanel("All Wells", br(),
+                                     gt::gt_output("belnorm_all")),
+                            tabPanel("By Hydraulic Connectivity", br(),
+                                     gt::gt_output("belnorm_hc")),
+                            tabPanel("By Aquifer Type", br(),
+                                     gt::gt_output("belnorm_aq"))),
 
-                          hr(),h3("Groundwater Level Conditions"),
-                          #map
-                          gt::gt_output("ptile_class_table"),
+                hr(),h3("Latest Details"),
+                gt::gt_output("latest_details"),
 
-                          hr(),h3("Wells Below Normal"),
-                          "This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.",
-                          br(),br(),
-                          tabsetPanel(tabPanel("All Wells", br(),
-                                          gt::gt_output("belnorm_all")),
-                                 tabPanel("By Hydraulic Connectivity", br(),
-                                          gt::gt_output("belnorm_hc")),
-                                 tabPanel("By Aquifer Type", br(),
-                                          gt::gt_output("belnorm_aq"))),
+                hr(),h3("Historical Water Level Plots"),
+                "Annual hydrographs and historical records for the observation wells summarized above can be found in this section.",
+                br(),br(),
+                "Current conditions for provincial groundwater observation wells can be accessed any time through the Groundwater Level Data Interactive Map.",
+                br(),br(),
+                "Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as ‘Working’ and what will become the official record.",
+                br(),
+                uiOutput("well_plot_selected"),
+                helpText("put the meta info here"),
+                plotOutput("well_plot_ptile_preview"),
+                plotOutput("well_plot_record_preview")
+              ),
+              ## Test ---------------------
+              tabPanel(
+                title = "Build HTML Report",
+                fluidRow(column(width = 6,
+                                h4(strong("Report Details")),
+                                uiOutput("report_title"),
+                                uiOutput("report_description")),
+                         column(width = 6,
+                                #  actionButton("out_dir2", "Build Report"),
+                                h4(strong("Report File")),
+                                uiOutput("report_name"),
+                                shinyFiles::shinyDirButton('out_dir', 'Select location to save', 'Please select a folder', FALSE),br(),
+                                h5("Location:"),
+                                verbatimTextOutput("out_dir_print"))),
+                br(),
+                fluidRow(column(width = 8, actionButton("gen_report_button", "Build and save HTML file",
+                                                        icon = icon("floppy-disk", lib = "glyphicon")))),
+                br(),br()
+              )
+            )
+          )
+        ))
+      # tabItem("Sub1", h4("Test")),
+      #  tabItem("Sub2", h4("Test2"))
+      # )
 
-                          hr(),h3("Latest Details"),
-                          gt::gt_output("latest_details"),
-
-                          hr(),h3("Historical Water Level Plots"),
-                          "Annual hydrographs and historical records for the observation wells summarized above can be found in this section.",
-                          br(),br(),
-                          "Current conditions for provincial groundwater observation wells can be accessed any time through the Groundwater Level Data Interactive Map.",
-                          br(),br(),
-                          "Note: ‘Working’ data are preliminary and have not yet been finalized as ‘Approved’ data with approved corrections and data grades for quality assurance. Quality assurance procedures may result in differences between what is displayed as ‘Working’ and what will become the official record.",
-                          br(),
-                          uiOutput("well_plot_selected"),
-                          helpText("put the meta info here"),
-                          plotOutput("well_plot_ptile_preview"),
-                          plotOutput("well_plot_record_preview")
-                        )
-                      )
-                    )
-                  )),
-          tabItem("Sub1", h4("Test")),
-          tabItem("Sub2", h4("Test2"))
-        )
-      )
     ),
     tags$footer(
       div(
-        div(style = "position:absolute; right: 7px; bottom: 7px",
-            bookmarkButton(label = "Bookmark")),
         a(href="https://www2.gov.bc.ca/gov/content/home", "Home"),
         " | ",
         a(href="https://www2.gov.bc.ca/gov/content/home/disclaimer",
@@ -279,15 +315,20 @@ run_shiny <- function() {
     #   data_aquifers()
     # })
     output$test <- renderText({
-     # areas_list2()
-      input$well_plot_selected
+      # areas_list2()
+      # input$well_plot_selected
+      #gw_data_wells()$data$details$ow
+      input$preview_confirmation
     })
 
     # Main UI Objects ----------------
 
+    observe(shinyjs::toggle("map_options", condition = input$show_map_options))
+    observe(shinyjs::toggle("reporting_options", condition = input$show_reporting_options))
+
     output$wells_selectize <- renderUI(
       selectizeInput(inputId = "wells_selectize",
-                     label = "Wells to include:",
+                     label = "List of wells to include in report:",
                      choices = wells_locations$Well,
                      multiple = TRUE,
                      options = list(delimiter = " ", create = T))
@@ -340,13 +381,43 @@ run_shiny <- function() {
                            selected = '')
     })
 
+
+
+    observeEvent(input$download_data, {
+      shinyWidgets::ask_confirmation(
+        inputId = "download_confirmation",
+        title = NULL,
+        text = tags$b(
+          # icon("file"),
+          "This may take several minutes. Do you want to continue?",
+          style = "color: #00BFFF;"
+        ),
+        btn_labels = c("No", "Yes"),
+        btn_colors = c("#FE2E2E", "#00BFFF"),
+        html = TRUE
+      )
+    })
+    gw_download <- observeEvent(input$download_confirmation, {
+       req(input$wells_selectize)
+      if(input$download_confirmation) {
+        showModal(modalDialog("Downloading well water level data. Please be patient, this may take several minutes...", footer=NULL))
+        # data <- gw_data_prep(ows = input$wells_selectize,
+        #                      report_dates = ,
+        #                      n_days = input$window_days,
+        #                      years_min = input$min_years,
+        #                      cache_age = 7)
+        data <-  ow_update(input$wells_selectize)
+        removeModal()
+      }
+    })
+
     # Main Table----------------
 
     output$locations <- DT::renderDataTable({
       wells_table %>%
         dplyr::mutate(NR_Area = as.factor(NR_Area), NR_Subarea = as.factor(NR_Subarea)) %>%
-        dplyr::select(Well, NR_Area, NR_Subarea, Location, Location_Long,
-                      Aquifer_ID, Aquifer_Subtype, Aquifer_Type, Hydraulic_Connectivity,
+        dplyr::select(Well, NR_Area, NR_Subarea, Location,
+                      Aquifer_Type, Hydraulic_Connectivity, Remarks, Aquifer_Subtype, Aquifer_ID, Location_Long,
                       Latitude, Longitude, Well_Status,
                       dplyr::everything()) %>%
         DT::datatable(rownames = FALSE,
@@ -494,78 +565,142 @@ run_shiny <- function() {
     })
 
     observeEvent(input$gen_report_button, {
-      # session$sendCustomMessage(type = 'testmessage',
-      #                           message = 'Thank you for clicking')
-      req(input$wells_selectize, input$out_dir)
-      showModal(modalDialog("Building HTML report file. Please be patient, this may take several minutes.", footer=NULL))
-      well_report(ows = input$wells_selectize,
-                  report_dates = input$date_select,
-                  title = input$report_title,
-                  description = input$report_description,
-                  n_days = input$window_days,
-                  years_min = input$min_years,
-                  out_dir = out_dir(),
-                  cache_age = 7,
-                  name = input$report_name)
-      removeModal()
-      showModal(modalDialog(HTML(paste0("Finished! Your report can be found here:.<br>",
-                                        out_dir(),"/",input$report_name,".html"))))
-
+      shinyWidgets::ask_confirmation(
+        inputId = "build_confirmation",
+        title = NULL,
+        text = tags$b(
+          # icon("file"),
+          "This may take several minutes. Do you want to continue?",
+          style = "color: #00BFFF;"
+        ),
+        btn_labels = c("No", "Yes"),
+        btn_colors = c("#FE2E2E", "#00BFFF"),
+        html = TRUE
+      )
     })
 
-
+    observeEvent(input$build_confirmation, {
+      # session$sendCustomMessage(type = 'testmessage',
+      #                           message = 'Thank you for clicking')
+      req(input$build_confirmation, input$wells_selectize, input$out_dir)
+      if(input$build_confirmation) {
+        showModal(modalDialog("Building HTML report file. Please be patient, this may take several minutes...", footer=NULL))
+        well_report(ows = input$wells_selectize,
+                    report_dates = input$date_select,
+                    title = input$report_title,
+                    description = input$report_description,
+                    n_days = input$window_days,
+                    years_min = input$min_years,
+                    out_dir = out_dir(),
+                    cache_age = 7,
+                    name = input$report_name)
+        removeModal()
+        showModal(modalDialog(HTML(paste0("Finished! Your report can be found here:.<br>",
+                                          out_dir(),"/",input$report_name,".html"))))
+      }
+    })
 
 
     # Preview Objects----------------
 
-    gw_data_wells <- eventReactive(input$gen_preview_button, {
-     # req(input$wells_selectize)
-      gw_data_prep(ows = input$wells_selectize,
-                   report_dates = input$date_select,
-                   n_days = input$window_days,
-                   years_min = input$min_years,
-                   cache_age = 7)
+    observeEvent(input$gen_preview_button, {
+      shinyWidgets::ask_confirmation(
+        inputId = "preview_confirmation",
+        title = NULL,
+        text = tags$b(
+          # icon("file"),
+          "This may take several minutes. Do you want to continue?",
+          style = "color: #00BFFF;"
+        ),
+        btn_labels = c("No", "Yes"),
+        btn_colors = c("#FE2E2E", "#00BFFF"),
+        html = TRUE
+      )
+    })
+
+
+    gw_data_wells <- eventReactive(input$preview_confirmation, {
+       req(input$wells_selectize)
+      if(input$preview_confirmation) {
+        showModal(modalDialog("Building tables and plots. Please be patient, this may take several minutes...", footer=NULL))
+        data <- gw_data_prep(ows = input$wells_selectize,
+                             report_dates = input$date_select,
+                             n_days = input$window_days,
+                             years_min = input$min_years,
+                             cache_age = 7)
+
+        if (input$inc_plots) {
+        data_all <- list( gw_data_prep = data,
+                          ptile_class_table = gw_percentile_class_table(data, gt = TRUE),
+                          belnorm_all = gw_wells_below_normal_table(data, gt = TRUE, which = "totals"),
+                          belnorm_hc = gw_wells_below_normal_table(data, gt = TRUE, which = "hydraulic_connectivity"),
+                          belnorm_aq = gw_wells_below_normal_table(data, gt = TRUE, which = "type"),
+                          latest_details = gw_percentiles_details_table(data, gt = TRUE),
+                          well_plot_ptile_preview = gw_percentiles_plot(data),
+                          well_plot_record_preview = gw_historic_data_plot(data))
+        } else {
+          data_all <- list( gw_data_prep = data,
+                            ptile_class_table = gw_percentile_class_table(data, gt = TRUE),
+                            belnorm_all = gw_wells_below_normal_table(data, gt = TRUE, which = "totals"),
+                            belnorm_hc = gw_wells_below_normal_table(data, gt = TRUE, which = "hydraulic_connectivity"),
+                            belnorm_aq = gw_wells_below_normal_table(data, gt = TRUE, which = "type"),
+                            latest_details = gw_percentiles_details_table(data, gt = TRUE),
+                            well_plot_ptile_preview = NULL,
+                            well_plot_record_preview = NULL)
+        }
+
+        removeModal()
+        data_all
+      }
     })
 
     output$ptile_class_table <- gt::render_gt({
-      gw_percentile_class_table(gw_data_wells(), gt = TRUE)
+      # gw_percentile_class_table(gw_data_wells(), gt = TRUE)
+      req()
+      gw_data_wells()$ptile_class_table
     })
 
     output$belnorm_all <- gt::render_gt({
-      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "totals")
+      #  gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "totals")
+      gw_data_wells()$belnorm_all
     })
     output$belnorm_hc <- gt::render_gt({
-      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "hydraulic_connectivity")
+      # gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "hydraulic_connectivity")
+      gw_data_wells()$belnorm_hc
     })
     output$belnorm_aq <- gt::render_gt({
-      gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "type")
+      #gw_wells_below_normal_table(gw_data_wells(), gt = TRUE, which = "type")
+      gw_data_wells()$belnorm_aq
     })
     output$latest_details <- gt::render_gt({
-      gw_percentiles_details_table(gw_data_wells(), gt = TRUE)
+      #gw_percentiles_details_table(gw_data_wells(), gt = TRUE)
+      gw_data_wells()$latest_details
     })
 
 
     output$well_plot_selected <- renderUI({
       selectInput("well_plot_selected",
                   "Well to Plot:",
-                  choices = gw_data_wells()$details$ow)
+                  choices = sort(gw_data_wells()$gw_data_prep$details$ow))
     })
 
-    plot_ptile_preview <- reactive({
-      gw_percentiles_plot(gw_data_wells())
-    })
+    #  plot_ptile_preview <- reactive({
+    #   gw_percentiles_plot(gw_data_wells())
+    #})
     output$well_plot_ptile_preview <- renderPlot({
       req(input$well_plot_selected)
-      plot_ptile_preview()[[input$well_plot_selected]]
+      #    plot_ptile_preview()[[input$well_plot_selected]]
+      gw_data_wells()$well_plot_ptile_preview[[input$well_plot_selected]]
     })
 
-    plot_record_preview <- reactive({
-      gw_historic_data_plot(gw_data_wells())
-    })
+    #  plot_record_preview <- reactive({
+    #    gw_historic_data_plot(gw_data_wells())
+    #  })
     output$well_plot_record_preview <- renderPlot({
       req(input$well_plot_selected)
-      plot_record_preview()[[input$well_plot_selected]]
-     # gw_historic_data_plot(gw_data_wells(), ows = input$well_plot_selected)[[1]]
+      #    plot_record_preview()[[input$well_plot_selected]]
+      # gw_historic_data_plot(gw_data_wells(), ows = input$well_plot_selected)[[1]]
+      gw_data_wells()$well_plot_record_preview[[input$well_plot_selected]]
     })
 
   }
