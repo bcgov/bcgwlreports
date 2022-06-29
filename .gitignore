@@ -6,5 +6,9 @@ docs
 dev_tests.R
 data
 cache
-reports
+reports/province_reports
+reports/south_area_reports
+reports/south_coast_reports
+reports/west_coast_reports
+reports/north_area_reports
 misc
