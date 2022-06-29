@@ -1,8 +1,25 @@
+---
+title: "bcgwlreports Additional Functions"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{bcgwlreports Additional Functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-### GAP FILL SMALL GAPS???
+```{r options, include=FALSE}
+knitr::opts_chunk$set(#eval = nzchar(Sys.getenv("hydat_eval")),
+                      # warning = FALSE, 
+                      message = FALSE#,
+                      #  collapse = TRUE,
+                      # crayon.enabled = FALSE
+)
+#options(crayon.enabled = FALSE)
+```
 
-
-# Trouble well
+```{r, eval=FALSE}
 wells <- c('OW296')
 
 # Good wells
@@ -38,4 +55,4 @@ t <- gw_both_plots(gw_data)
 gw_both_plots(gw_data, ows = "OW089")
 gw_both_plots(gw_data, ows = "OW217")
 gw_both_plots(gw_data, ows = "OW400")
-
+```

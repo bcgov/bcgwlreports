@@ -247,7 +247,7 @@ t %>%
 
 **Latest details on observation wells in Water Year `r wy-1` - `r wy`**
 
-```{r well_summaries, results = "asis"}
+```{r well_summaries, results = "asis", warning=FALSE}
 foot1 <- "n is the number of years included in the percentile calculation."
 foot2 <- "Values with an Approval Status of ‘Working’"
 
@@ -292,7 +292,8 @@ for(r in unique(details$region)) {
                "remarks" = "Remarks") %>%
     cols_align("center", columns = "ow") %>%
     gt_perc_colours() %>%
-    fmt_missing(everything(), missing_text = "") %>%
+    sub_missing(dplyr::everything(), missing_text = "") %>%
+   # fmt_missing(dplyr::everything(), missing_text = "") %>%
     tab_footnote(foot1, locations = cells_column_labels("percentile")) %>%
     tab_footnote(foot2, locations = cells_body(columns = "date",
                                                rows = approval == "Working")) %>%

@@ -14,12 +14,11 @@
 
 
 #' Launch shiny app
+#' @title Launch the shiny app
 #'
 #' @export
-
-library(shiny)
-library(shinydashboard)
-
+#' @import shiny
+#' @import shinydashboard
 
 
 run_shiny <- function() {
@@ -99,6 +98,11 @@ run_shiny <- function() {
                   Location_Long = as.character(Location_Long),
                   Remarks = NA) %>%
     dplyr::arrange(Well)
+
+  wells_all_list <- readRDS("data-raw/obswell_info.rds") %>%
+    sf::st_drop_geometry() %>%
+    dplyr::arrange(Well_Number) %>%
+    dplyr::pull(Well_Number)
 
   # Other setup -----------------
 
@@ -196,16 +200,21 @@ run_shiny <- function() {
               ),
               tabPanel(
                 title = "Well Summary",
-                h4("plotly plots of well data, map with aquifer?")
+                h4("plotly plots of well data, map with aquifer?"),
+                selectizeInput("well_single_selected", "Select well to view:",
+                               choices = wells_all_list,
+                               selected = "OW002"),
+                plotly::plotlyOutput("single_well_plotly"),
+                DT::dataTableOutput("single_well_table")
               ),
 
               ## Report Prevview ---------------------
               tabPanel(
                 title = "Preview Report",
-              #  checkboxInput("inc_plots", "Preview plots? (unchecking may save time if viewing just tables)", value = TRUE),
-               # actionButton("gen_preview_button", "Preview Report",
-              #               icon = icon("eye-open", lib = "glyphicon")),
-                br(),
+                checkboxInput("inc_plots", "Preview plots? (unchecking may save time if viewing just tables)", value = TRUE),
+                actionButton("gen_preview_button", "Preview Report",
+                             icon = icon("eye-open", lib = "glyphicon")),
+                hr(),
                 h2(textOutput("prev_title")),
                 textOutput("prev_desc"),
                 br(),
@@ -398,7 +407,7 @@ run_shiny <- function() {
       )
     })
     gw_download <- observeEvent(input$download_confirmation, {
-       req(input$wells_selectize)
+      req(input$wells_selectize)
       if(input$download_confirmation) {
         showModal(modalDialog("Downloading well water level data. Please be patient, this may take several minutes...", footer=NULL))
         # data <- gw_data_prep(ows = input$wells_selectize,
@@ -620,7 +629,7 @@ run_shiny <- function() {
 
 
     gw_data_wells <- eventReactive(input$preview_confirmation, {
-       req(input$wells_selectize)
+      req(input$wells_selectize)
       if(input$preview_confirmation) {
         showModal(modalDialog("Building tables and plots. Please be patient, this may take several minutes...", footer=NULL))
         data <- gw_data_prep(ows = input$wells_selectize,
@@ -630,14 +639,14 @@ run_shiny <- function() {
                              cache_age = 7)
 
         if (input$inc_plots) {
-        data_all <- list( gw_data_prep = data,
-                          ptile_class_table = gw_percentile_class_table(data, gt = TRUE),
-                          belnorm_all = gw_wells_below_normal_table(data, gt = TRUE, which = "totals"),
-                          belnorm_hc = gw_wells_below_normal_table(data, gt = TRUE, which = "hydraulic_connectivity"),
-                          belnorm_aq = gw_wells_below_normal_table(data, gt = TRUE, which = "type"),
-                          latest_details = gw_percentiles_details_table(data, gt = TRUE),
-                          well_plot_ptile_preview = gw_percentiles_plot(data),
-                          well_plot_record_preview = gw_historic_data_plot(data))
+          data_all <- list( gw_data_prep = data,
+                            ptile_class_table = gw_percentile_class_table(data, gt = TRUE),
+                            belnorm_all = gw_wells_below_normal_table(data, gt = TRUE, which = "totals"),
+                            belnorm_hc = gw_wells_below_normal_table(data, gt = TRUE, which = "hydraulic_connectivity"),
+                            belnorm_aq = gw_wells_below_normal_table(data, gt = TRUE, which = "type"),
+                            latest_details = gw_percentiles_details_table(data, gt = TRUE),
+                            well_plot_ptile_preview = gw_percentiles_plot(data),
+                            well_plot_record_preview = gw_historic_data_plot(data))
         } else {
           data_all <- list( gw_data_prep = data,
                             ptile_class_table = gw_percentile_class_table(data, gt = TRUE),
@@ -703,7 +712,41 @@ run_shiny <- function() {
       gw_data_wells()$well_plot_record_preview[[input$well_plot_selected]]
     })
 
+    # Single Well summary----------------
+
+    single_well_data <- reactive({
+      # readr::read_csv(paste0("http://www.env.gov.bc.ca/wsd/data_searches/obswell/map/data/",
+      #                        input$well_single_selected, "-data.csv")) %>%
+      #   dplyr::select(Well = myLocation, DateTime = Time, Value, Approval) %>%
+      #   dplyr::mutate(Date = as.Date(DateTime)) %>%
+      #   fasstr::fill_missing_dates()
+      readr::read_csv(paste0("http://www.env.gov.bc.ca/wsd/data_searches/obswell/map/data/",
+                             input$well_single_selected, "-average.csv")) %>%
+        dplyr::select(Well = myLocation, Date = QualifiedTime, Value) %>%
+        dplyr::mutate(Date = as.Date(Date)) %>%
+        fasstr::fill_missing_dates()
+    })
+
+    output$single_well_table <- DT::renderDT({
+      single_well_data()
+    })
+
+    output$single_well_plotly <- plotly::renderPlotly({
+      plotly::ggplotly(
+        ggplot2::ggplot(data = single_well_data(), mapping = ggplot2::aes(x=Date, y=Value))+
+          ggplot2::geom_line(na.rm = TRUE)+
+          ggplot2::geom_point()+#mapping = ggplot2::aes(colour=Approval)
+          ggplot2::scale_y_reverse()+
+          ggplot2::ylab("Depth Below Ground (m)")+
+          ggplot2::theme_bw()
+      )
+    })
+
+
   }
+
+
+
 
   # output$remarks <- renderTable({
   #  wells_locations$Area[input$locations_rows_all]

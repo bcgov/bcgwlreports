@@ -2,33 +2,22 @@
 % Please edit documentation in R/gw_data_prep.R
 \name{gw_data_prep}
 \alias{gw_data_prep}
-\title{Compile report}
+\title{Prepare well data for creating table and plots}
 \usage{
 gw_data_prep(
   ows,
-  name = "report",
   report_dates = Sys.Date(),
-  title = NULL,
-  description = NULL,
   remarks = NULL,
-  n_days = 13,
+  n_days = 14,
   years_min = 5,
-  out_dir = ".",
   cache_age = 7
 )
 }
 \arguments{
 \item{ows}{Character vector. Observation well numbers (e.g, "OW000")}
 
-\item{name}{Character string. Short text to name the file. Will become
-\code{name_YYYY_MM_DD.html}}
-
 \item{report_dates}{Character vector. Two current dates to explore. By
 default a date 2 week ago and 4 weeks before that are used.}
-
-\item{title}{Character. Title of the report.}
-
-\item{description}{Character. Descriptive paragraph to place at the start.}
 
 \item{remarks}{Character / data frame. Path to file OR data frame containing
 remarks on specific observation wells to be included in the main summary
@@ -42,17 +31,11 @@ report date, for a total window of 4 weeks.}
 \item{years_min}{Numeric. Minimum number of years required to to calculate a
 percentiles}
 
-\item{out_dir}{Character. Location of output report. Defaults to working
-directory.}
-
 \item{cache_age}{Logical. Maximum age in days of cached datasets (not obs well
 data, but metadata related to regional maps, aquifer and wells).}
-
-\item{cache_report}{Logical. Whether or not to use a cache for the report plots.
-Permits faster runs when tweaking details.}
 }
 \description{
-Compile report
+Prepare well data for creating table and plots
 }
 \details{
 \code{remarks} can be a file path to a TSV (tab-separated) text file or
@@ -65,23 +48,10 @@ difficult to write out complete, complex remarks.
 
 \dontrun{
 
-well_report(ows = c("OW008", "OW217", "OW377", "OW197"))
+wells <- c('OW400')
 
-# If short, easiest to add remarks in script:
+gw_data <- gw_data_prep(ows = wells)
 
-library(dplyr)
-
-remarks <- tribble(~ow,     ~remarks,
-                   "OW377", "Construction in the area disrupting measurements",
-                   "OW008", "No problems")
-
-well_report(ows = c("OW008", "OW217", "OW377", "OW197"),
-            remarks = remarks)
-
-# Or load from a file
-library(readr)
-write_tsv(remarks, "remarks.txt")
-check_remarks(remarks = "remarks.txt")
 }
 
 }

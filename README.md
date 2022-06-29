@@ -1,21 +1,78 @@
 
-# Groundwater Level Review Report
+<!-- badges: start -->
 
-[![img](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
+[![Codecov test
+coverage](https://codecov.io/gh/bcgov/bcgwlreports/branch/main/graph/badge.svg)](https://app.codecov.io/gh/bcgov/bcgwlreports?branch=main)
+<!-- badges: end -->
 
-This project aims to create groundwater level status reports of
-Provincial Groundwater Observation Well water level data.
+# BC Groundwater Level Review Report
 
-### Project Status
+[![img](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-This project is in early stages of development.
+This package creates reports of percentile classes of Provincial
+Groundwater Observation Well groundwater levels.
 
-### Creating Reports
+### Installation
 
--   Open `00_run.R`
--   Add observation wells to the `ow` vector
--   Choose report dates
--   Run entire `00_run.R` script
+To install the package from
+[GitHub](https://github.com/bcgov/bcgwlreports), use the
+[`remotes`](https://cran.r-project.org/package=remotes) package then the
+`fasstr` package:
+
+``` r
+if(!requireNamespace("remotes")) install.packages("remotes")
+remotes::install_github("bcgov/bcgwlreports")
+```
+
+### Usage
+
+To use the bcgwlreports functions, the package must first be called from
+the library:
+
+``` r
+library(bcgwlreports)
+```
+
+The following is an example of how to create and save an HTML report
+from a list of wells for the current date.
+
+``` r
+# List some wells from the West Coast Region
+wells <- c("OW204", "OW211", "OW312", "OW329", "OW351", "OW355", 
+           "OW371", "OW383", "OW389", "OW437", "OW470")
+
+# Give the report a title
+report_title <- paste0("West Coast Region Groundwater Level Conditions")
+
+# Give the report a description
+report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
+                             "in the West Coast Region as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
+
+# Build the report
+well_report (ows = wells,
+             report_dates = c(Sys.Date()),
+             title = report_title,
+             description = report_description,
+             n_days = 14,
+             years_min = 5,
+             out_dir = ".",
+             name = "west_coast_region")
+```
+
+This report will calculate the percentiles of recent data compared to
+historical water levels. The report will look for data on the reporting
+date (`report_dates` argument) and will look back 14 days (`n_days`
+argument; will also look forward 14 days if a previous date selected).
+Minimum 5 years of level data is required to calculate a percentile
+(`years_min` argument). The title and description of the report need to
+be provided using the `title` and `description` arguments, and a
+directory folder and file name also need to be provided using the
+`out_dir` and `name` arguments. More information on the `well_report`
+function can be found in the documentation `?well_report`.
+
+Running the `well_report` function may take several minutes (up to 15-20
+min if many) depending on the number of wells provided (to download and
+combine the information).
 
 ### Getting Help or Reporting an Issue
 
@@ -33,7 +90,7 @@ to abide by its terms.
 
 ### License
 
-    Copyright 2021 Province of British Columbia
+    Copyright 2022 Province of British Columbia
 
     Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
     you may not use this file except in compliance with the License.
@@ -52,5 +109,5 @@ to abide by its terms.
 This repository is maintained by the [Water Protection and
 Sustainability
 Branch](https://www2.gov.bc.ca/gov/content/environment/air-land-water/water)
-of the British Columbia Ministry of Environment and Climate Change
-Strategy.
+of the British Columbia Ministry of Land, Water and Resource
+Stewardship.

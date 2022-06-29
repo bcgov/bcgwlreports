@@ -19,8 +19,6 @@
 #' @param type Character. Which data should be updated? By default all (`NULL`).
 #'   Must be a data type in `data_types` (created in `data-raw/internal.R`)
 #'
-#' @return
-#'
 #' @noRd
 
 data_update <- function(cache_age = 7, type = NULL) {

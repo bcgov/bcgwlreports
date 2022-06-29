@@ -1,4 +1,4 @@
-# Copyright 2021 Province of British Columbia
+# Copyright 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,30 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-#' Compile report
+#' Prepare well data for creating table and plots
 #'
-#' @param ows Character vector. Observation well numbers (e.g, "OW000")
-#' @param name Character string. Short text to name the file. Will become
-#'   `name_YYYY_MM_DD.html`
-#' @param report_dates Character vector. Two current dates to explore. By
-#'   default a date 2 week ago and 4 weeks before that are used.
-#' @param title Character. Title of the report.
-#' @param description Character. Descriptive paragraph to place at the start.
-#' @param remarks Character / data frame. Path to file OR data frame containing
-#'   remarks on specific observation wells to be included in the main summary
-#'   table (see Details).
-#' @param n_days Numeric. If there is no data on the report date chosen, this is
-#'   the range of days over which to look for alternative dates with data.
-#'   Defaults to 2 weeks, meaning 2 weeks before and 2 weeks after a given
-#'   report date, for a total window of 4 weeks.
-#' @param years_min Numeric. Minimum number of years required to to calculate a
-#'   percentiles
-#' @param out_dir Character. Location of output report. Defaults to working
-#'   directory.
-#' @param cache_age Logical. Maximum age in days of cached datasets (not obs well
-#'   data, but metadata related to regional maps, aquifer and wells).
-#' @param cache_report Logical. Whether or not to use a cache for the report plots.
-#'   Permits faster runs when tweaking details.
+#' @inheritParams well_report
 #' @details `remarks` can be a file path to a TSV (tab-separated) text file or
 #'   Excel file contain columns 'ow' and 'remarks', or it can be a
 #'   `data.frame()`/`tibble()` (see examples) containing the same. Note that CSV
@@ -46,46 +25,25 @@
 #'
 #' \dontrun{
 #'
-#' well_report(ows = c("OW008", "OW217", "OW377", "OW197"))
+#' wells <- c('OW400')
 #'
-#' # If short, easiest to add remarks in script:
+#' gw_data <- gw_data_prep(ows = wells)
 #'
-#' library(dplyr)
-#'
-#' remarks <- tribble(~ow,     ~remarks,
-#'                    "OW377", "Construction in the area disrupting measurements",
-#'                    "OW008", "No problems")
-#'
-#' well_report(ows = c("OW008", "OW217", "OW377", "OW197"),
-#'             remarks = remarks)
-#'
-#' # Or load from a file
-#' library(readr)
-#' write_tsv(remarks, "remarks.txt")
-#' check_remarks(remarks = "remarks.txt")
 #' }
 #'
 #' @export
 #'
 gw_data_prep <- function(ows,
-                         name = "report",
                          report_dates = Sys.Date(),
-                         title = NULL,
-                         description = NULL,
                          remarks = NULL,
-                         n_days = 13,
+                         n_days = 14,
                          years_min = 5,
-                         out_dir = ".",
                          cache_age = 7) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
   check_numeric(cache_age, type = "cache_age", lower = 0)
-  check_out_dir(out_dir)
-  check_name(name)
 
-  check_title(title)
-  description <- check_description(description)
   report_dates <- check_dates(report_dates, n_days)
 
   remarks <- check_remarks(remarks, ows)
@@ -158,8 +116,6 @@ gw_data_prep <- function(ows,
 
 
   return(list("ows" = ows,
-              "title" = title,
-              "description" = description,
               "remarks" = remarks,
               "w_full_all" = w_full_all,
               "w_full" = w_full,

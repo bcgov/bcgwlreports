@@ -1,7 +1,20 @@
+# Copyright 2022 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and limitations under the License.
 
 
-
-
+#' Create a percentiles map with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#'
+#' @export
 
 gw_percentile_map <- function(data){
 
@@ -11,7 +24,11 @@ gw_percentile_map <- function(data){
 
 }
 
-
+#' Create a percentiles class table with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param gt Make the table gt format (TRUE) or a regular data.frame (FALSE)
+#'
+#' @export
 gw_percentile_class_table <- function(data, gt = TRUE){
 
   t <- well_table_status(data$w_perc, perc_values, data$window)
@@ -36,6 +53,12 @@ gw_percentile_class_table <- function(data, gt = TRUE){
   return(t)
 }
 
+#' Create a wells below normal table with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param which Which group to filter by: "totals" for all, 'hydraulic_connectivity' or 'type' for aquifer type.
+#' @param gt Make the table gt format (TRUE) or a regular data.frame (FALSE)
+#'
+#' @export
 gw_wells_below_normal_table <- function(data,
                                         which = c("totals", "hydraulic_connectivity", "type")[1],
                                         gt = TRUE){
@@ -60,6 +83,11 @@ gw_wells_below_normal_table <- function(data,
   return(t)
 }
 
+#' Create a wells percentiles details with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param gt Make the table gt format (TRUE) or a regular data.frame (FALSE)
+#'
+#' @export
 gw_percentiles_details_table <- function(data,
                                          gt = TRUE){
 
@@ -102,7 +130,8 @@ gw_percentiles_details_table <- function(data,
                      "remarks" = "Remarks") %>%
       gt::cols_align("center", columns = "ow") %>%
       gt_perc_colours() %>%
-      gt::fmt_missing(everything(), missing_text = "") %>%
+      gt::sub_missing(dplyr::everything(), missing_text = "") %>%
+     # gt::fmt_missing(dplyr::everything(), missing_text = "") %>%
       gt::tab_footnote(foot1, locations = gt::cells_column_labels("percentile")) %>%
       gt::tab_footnote(foot2, locations = gt::cells_body(columns = "date",
                                                          rows = approval == "Working")) %>%
@@ -113,6 +142,11 @@ gw_percentiles_details_table <- function(data,
   return(details)
 }
 
+#' Create an annual hydrograph with percentiles plot with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param ows List a specific well to plot from original listed wells (exports just this well)
+#'
+#' @export
 gw_percentiles_plot <- function(data, ows = NA){
 
  # if (nrow(data$w_dates) > 0) {
@@ -151,6 +185,11 @@ gw_percentiles_plot <- function(data, ows = NA){
   return(p)
 }
 
+#' Create historical data plot with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param ows List a specific well to plot from original listed wells (exports just this well)
+#'
+#' @export
 gw_historic_data_plot <- function(data, ows = NA){
 
   latest_date <- data$w_dates %>%
@@ -186,6 +225,11 @@ gw_historic_data_plot <- function(data, ows = NA){
   return(p)
 }
 
+#' Create both percentiles and historical plot with selected observation wells
+#' @param data Data object created from `gw_data_prep()` function.
+#' @param ows List a specific well to plot from original listed wells (exports just this well)
+#'
+#' @export
 gw_both_plots <- function(data, ows = NA){
 
   latest_date <- data$w_dates %>%
@@ -226,10 +270,12 @@ gw_both_plots <- function(data, ows = NA){
 
 }
 
-gw_precip_plots <- function(){
-
-}
-
+#' Get a list of all wells from a natural resource region or area.
+#' @param nr_area List one or multiple of c("North Natural Resource Area", "South Coast Region",
+#'    "South Natural Resource Area", "West Coast Region")
+#' @param rm_well Exclude specific wells.
+#'
+#' @export
 get_obs_in_area <- function(nr_area = c("North Natural Resource Area",
                                         "South Coast Region",
                                         "South Natural Resource Area",

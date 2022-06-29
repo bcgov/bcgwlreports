@@ -20,6 +20,9 @@
 #' @name bcgwlreports-package
 #' @aliases bcgwlreports bcgwlreports-package
 #' @importFrom dplyr %>%
+#' @importFrom lubridate %m-%
 #' @importFrom rlang .data
+#' @import patchwork
+#' @import sessioninfo
 
 NULL

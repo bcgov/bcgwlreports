@@ -1,3 +1,25 @@
+---
+title: "bcgwlreports Build ObsWell Info Table"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{bcgwlreports Build ObsWell Info Table}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r options, include=FALSE}
+knitr::opts_chunk$set(#eval = nzchar(Sys.getenv("hydat_eval")),
+                      # warning = FALSE, 
+                      message = FALSE#,
+                      #  collapse = TRUE,
+                      # crayon.enabled = FALSE
+)
+#options(crayon.enabled = FALSE)
+```
+
+```{r, eval=FALSE}
 # Load the package
 
 time1 <- Sys.time()
@@ -124,3 +146,5 @@ write.csv(obswell_info_table, "data-raw/obswell_info_table.csv", row.names = FAL
 time2 <- Sys.time()
 time_length <- time2 - time1
 time_length
+
+```

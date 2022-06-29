@@ -34,8 +34,6 @@
 #'   directory.
 #' @param cache_age Logical. Maximum age in days of cached datasets (not obs well
 #'   data, but metadata related to regional maps, aquifer and wells).
-#' @param cache_report Logical. Whether or not to use a cache for the report plots.
-#'   Permits faster runs when tweaking details.
 #' @details `remarks` can be a file path to a TSV (tab-separated) text file or
 #'   Excel file contain columns 'ow' and 'remarks', or it can be a
 #'   `data.frame()`/`tibble()` (see examples) containing the same. Note that CSV
