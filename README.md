@@ -17,7 +17,7 @@ Groundwater Observation Well groundwater levels.
 To install the package from
 [GitHub](https://github.com/bcgov/bcgwlreports), use the
 [`remotes`](https://cran.r-project.org/package=remotes) package then the
-`fasstr` package:
+`bcgwlreports` package:
 
 ``` r
 if(!requireNamespace("remotes")) install.packages("remotes")
@@ -26,7 +26,7 @@ remotes::install_github("bcgov/bcgwlreports")
 
 ### Usage
 
-To use the bcgwlreports functions, the package must first be called from
+To use the bcgwlreports functions, the package must be first called from
 the library:
 
 ``` r
@@ -34,7 +34,7 @@ library(bcgwlreports)
 ```
 
 The following is an example of how to create and save an HTML report
-from a list of wells for the current date.
+from a list of wells for the current date:
 
 ``` r
 # List some wells from the West Coast Region
