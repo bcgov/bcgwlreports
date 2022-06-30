@@ -18,7 +18,7 @@ report_description <- paste0("The following provides an overview of groundwater 
                              ifelse(length(region_id) == 4, "Province of BC", region_id),
                              " as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
 
-ows <- sort(get_obs_in_area(region_id))
+ows <- sort(bcgwlreports::get_obs_in_area(region_id))
 
 bcgwlreports::well_report(ows,
                           report_dates = c(Sys.Date()),

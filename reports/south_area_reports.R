@@ -4,7 +4,7 @@
 ### add precipitation plots for version 2
 ### add custom hydraulic connectivity in raw_table ()
 
-library(bcgwlreports)
+
 dir.create("reports/south_area_reports")
 
 
@@ -24,15 +24,15 @@ report_title <- paste0("South Area Groundwater Level Conditions")
 report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                              "in the South Area as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
 
-well_report (ows = south_wells,
-             report_dates = c(Sys.Date()),
-             title = report_title,
-             description = report_description,
-             n_days = 14,
-             years_min = 5,
-             out_dir = "reports/south_area_reports",
-             cache_age = 7,
-             name = "south_area")
+bcgwlreports::well_report (ows = south_wells,
+                           report_dates = c(Sys.Date()),
+                           title = report_title,
+                           description = report_description,
+                           n_days = 14,
+                           years_min = 5,
+                           out_dir = "reports/south_area_reports",
+                           cache_age = 7,
+                           name = "south_area_OBWB")
 
 
 
@@ -49,15 +49,15 @@ report_title <- paste0("South Area Groundwater Level Conditions")
 report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                              "in the South Area as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
 
-well_report (ows = south_wells,
-             report_dates = c(Sys.Date()),
-             title = report_title,
-             description = report_description,
-             n_days = 14,
-             years_min = 5,
-             out_dir = "reports/south_area_reports",
-             cache_age = 7,
-             name = "south_area_regional_drought_reports")
+bcgwlreports::well_report (ows = south_wells,
+                           report_dates = c(Sys.Date()),
+                           title = report_title,
+                           description = report_description,
+                           n_days = 14,
+                           years_min = 5,
+                           out_dir = "reports/south_area_reports",
+                           cache_age = 7,
+                           name = "south_area_regional")
 
 
 
@@ -67,22 +67,22 @@ kb_wells <- c("OW074", # Central Kootenay
               "0W185", "OW302", "OW309", "OW365", "OW381", "OW464", #Columbia-Shuswap
               "OW291", "OW362", "OW363", "OW468", #East Kootenay
               "OW217", "OW306", "OW444" #Kootenay Boundary
-              )
+)
 
 report_title <- paste0("Kootenay-Boundary Groundwater Level Conditions")
 
 report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                              "in the Kootenay-Boundary as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
 
-well_report (ows = kb_wells,
-             report_dates = c(Sys.Date()),
-             title = report_title,
-             description = report_description,
-             n_days = 14,
-             years_min = 5,
-             out_dir = "reports/south_area_reports",
-             cache_age = 7,
-             name = "Kootenay-Boundary_drought_reports")
+bcgwlreports::well_report (ows = kb_wells,
+                           report_dates = c(Sys.Date()),
+                           title = report_title,
+                           description = report_description,
+                           n_days = 14,
+                           years_min = 5,
+                           out_dir = "reports/south_area_reports",
+                           cache_age = 7,
+                           name = "Kootenay-Boundary_drought_reports")
 
 
 ## Thomspon-Okanagan Wells (filtered for stations)
@@ -92,20 +92,20 @@ to_wells <- c('OW115', 'OW172', 'OW236', 'OW262', 'OW356', 'OW410', 'OW411', 'OW
               'OW075', 'OW154', 'OW203', 'OW264', 'OW282', 'OW332', 'OW387', 'OW401', #Similkameen
               'OW402', 'OW403', 'OW404', 'OW405', 'OW407', 'OW412', 'OW467', #Similkameen
               'OW035', 'OW045', 'OW080', 'OW296', 'OW344', 'OW375', 'OW399', 'OW400', 'OW422', 'OW423', 'OW494' #Thompson-Nicola
-              )
+)
 
 report_title <- paste0("Thompson-Okanagan Groundwater Level Conditions")
 
 report_description <- paste0("The following provides an overview of groundwater (GW) conditions ",
                              "in the Thompson-Okanagan as of ", format(Sys.Date(), format = "%B %d, %Y"), ".")
 
-well_report (ows = to_wells,
-             report_dates = c(Sys.Date()),
-             title = report_title,
-             description = report_description,
-             n_days = 14,
-             years_min = 5,
-             out_dir = "reports/south_area_reports",
-             cache_age = 7,
-             name = "Thompson-Okanagan_drought_reports")
+bcgwlreports::well_report (ows = to_wells,
+                           report_dates = c(Sys.Date()),
+                           title = report_title,
+                           description = report_description,
+                           n_days = 14,
+                           years_min = 5,
+                           out_dir = "reports/south_area_reports",
+                           cache_age = 7,
+                           name = "Thompson-Okanagan_drought_reports")
 

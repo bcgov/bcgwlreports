@@ -15,10 +15,11 @@
 
 #' Launch shiny app
 #' @title Launch the shiny app
-#'
-#' @export
 #' @import shiny
 #' @import shinydashboard
+#' @export
+#'
+
 
 
 run_shiny <- function() {
