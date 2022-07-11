@@ -1,5 +1,7 @@
 
-dir.create("reports/province_reports")
+
+## Create the folder to save the files if it doesnt exist
+dir.create("reports/province_reports", showWarnings = FALSE)
 
 
 # region_id <- "South Natural Resource Area"

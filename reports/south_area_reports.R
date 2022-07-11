@@ -5,7 +5,9 @@
 ### add custom hydraulic connectivity in raw_table ()
 
 
-dir.create("reports/south_area_reports")
+
+## Create the folder to save the files if it doesnt exist
+dir.create("reports/south_area_reports", showWarnings = FALSE)
 
 
 #### OBWB Water Support Seminar (list provided)
@@ -63,11 +65,15 @@ bcgwlreports::well_report (ows = south_wells,
 
 ## Kootenay-Boundary Wells (filtered for stations)
 
-kb_wells <- c("OW074", # Central Kootenay
-              "0W185", "OW302", "OW309", "OW365", "OW381", "OW464", #Columbia-Shuswap
-              "OW291", "OW362", "OW363", "OW468", #East Kootenay
-              "OW217", "OW306", "OW444" #Kootenay Boundary
-)
+# kb_wells <- c("OW074", # Central Kootenay
+#               "OW185", "OW302", "OW309", "OW365", "OW381", "OW464", #Columbia-Shuswap
+#               "OW291", "OW362", "OW363", "OW468", #East Kootenay
+#               "OW217", "OW306", "OW444" #Kootenay Boundary
+# )
+
+kb_wells <- c('OW074', 'OW291', 'OW468', 'OW309', 'OW362', 'OW363', #Kootenay
+              'OW306', 'OW444', 'OW217') # Boundary
+
 
 report_title <- paste0("Kootenay-Boundary Groundwater Level Conditions")
 
@@ -85,14 +91,21 @@ bcgwlreports::well_report (ows = kb_wells,
                            name = "Kootenay-Boundary_drought_reports")
 
 
-## Thomspon-Okanagan Wells (filtered for stations)
+## Thompson-Okanagan Wells (filtered for stations)
 
-to_wells <- c('OW115', 'OW172', 'OW236', 'OW262', 'OW356', 'OW410', 'OW411', 'OW413', 'OW442', #Central Okanagan
-              'OW047', 'OW117', 'OW118', 'OW122', 'OW180', 'OW294', 'OW311', 'OW384', 'OW409', 'OW487', #North Okanagan
-              'OW075', 'OW154', 'OW203', 'OW264', 'OW282', 'OW332', 'OW387', 'OW401', #Similkameen
-              'OW402', 'OW403', 'OW404', 'OW405', 'OW407', 'OW412', 'OW467', #Similkameen
-              'OW035', 'OW045', 'OW080', 'OW296', 'OW344', 'OW375', 'OW399', 'OW400', 'OW422', 'OW423', 'OW494' #Thompson-Nicola
-)
+# to_wells <- c('OW115', 'OW172', 'OW236', 'OW262', 'OW356', 'OW410', 'OW411', 'OW413', 'OW442', #Central Okanagan
+#               'OW047', 'OW117', 'OW118', 'OW122', 'OW180', 'OW294', 'OW311', 'OW384', 'OW409', 'OW487', #North Okanagan
+#               'OW075', 'OW154', 'OW203', 'OW264', 'OW282', 'OW332', 'OW387', 'OW401', #Similkameen
+#               'OW402', 'OW403', 'OW404', 'OW405', 'OW407', 'OW412', 'OW467', #Similkameen
+#               'OW035', 'OW045', 'OW080', 'OW296', 'OW344', 'OW375', 'OW399', 'OW400', 'OW422', 'OW423', 'OW494' #Thompson-Nicola
+# )
+
+to_wells <- c('OW400', 'OW344', 'OW296', 'OW185', 'OW381', 'OW422', #Thompson
+              'OW180', 'OW409', 'OW294', 'OW384', #North Okanagan
+              'OW356', 'OW442', 'OW236', # Central Okanagan
+              'OW203', 'OW262', 'OW282', 'OW403', 'OW407',
+              'OW075') # Similkameen
+
 
 report_title <- paste0("Thompson-Okanagan Groundwater Level Conditions")
 

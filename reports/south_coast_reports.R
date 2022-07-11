@@ -1,6 +1,7 @@
 
 
-dir.create("reports/south_coast_reports")
+## Create the folder to save the files if it doesnt exist
+dir.create("reports/south_coast_reports", showWarnings = FALSE)
 
 
 #### Regional Reports
