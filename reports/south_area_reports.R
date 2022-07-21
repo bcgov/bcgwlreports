@@ -63,6 +63,13 @@ bcgwlreports::well_report (ows = south_wells,
 
 
 
+
+
+
+## Create the folder to save the files if it doesnt exist
+dir.create("reports/south_area_reports", showWarnings = FALSE)
+
+
 ## Kootenay-Boundary Wells (filtered for stations)
 
 # kb_wells <- c("OW074", # Central Kootenay
