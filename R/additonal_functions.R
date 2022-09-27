@@ -131,7 +131,7 @@ gw_percentiles_details_table <- function(data,
       gt::cols_align("center", columns = "ow") %>%
       gt_perc_colours() %>%
       gt::sub_missing(dplyr::everything(), missing_text = "") %>%
-     # gt::fmt_missing(dplyr::everything(), missing_text = "") %>%
+      # gt::fmt_missing(dplyr::everything(), missing_text = "") %>%
       gt::tab_footnote(foot1, locations = gt::cells_column_labels("percentile")) %>%
       gt::tab_footnote(foot2, locations = gt::cells_body(columns = "date",
                                                          rows = approval == "Working")) %>%
@@ -149,21 +149,21 @@ gw_percentiles_details_table <- function(data,
 #' @export
 gw_percentiles_plot <- function(data, ows = NA){
 
- # if (nrow(data$w_dates) > 0) {
+  # if (nrow(data$w_dates) > 0) {
 
-    latest_date <- data$w_dates %>%
-      dplyr::group_by(ow) %>%
-      dplyr::filter(!is.na(Value)) %>%
-      dplyr::filter(Date == max(Date))
+  latest_date <- data$w_dates %>%
+    dplyr::group_by(ow) %>%
+    dplyr::filter(!is.na(Value)) %>%
+    dplyr::filter(Date == max(Date))
 
-    if (all(!is.na(ows))) {
+  if (all(!is.na(ows))) {
 
-      if (any(!ows %in% unique(latest_date$ow)))
-        stop(paste0("ows wells not in original list: ", list(ows[!ows %in% unique(latest_date$ow)])), call. = FALSE)
+    if (any(!ows %in% unique(latest_date$ow)))
+      stop(paste0("ows wells not in original list: ", list(ows[!ows %in% unique(latest_date$ow)])), call. = FALSE)
 
-      latest_date <- latest_date %>%
-        dplyr::filter(ow %in% ows)
-    }
+    latest_date <- latest_date %>%
+      dplyr::filter(ow %in% ows)
+  }
   #}
 
   p <- list()
@@ -192,26 +192,31 @@ gw_percentiles_plot <- function(data, ows = NA){
 #' @export
 gw_historic_data_plot <- function(data, ows = NA){
 
-  latest_date <- data$w_dates %>%
-    dplyr::group_by(ow) %>%
-    dplyr::filter(!is.na(Value)) %>%
-    dplyr::filter(Date == max(Date))
+  well_list <- data$ows
+  # latest_date <- data$w_dates %>%
+  #   dplyr::group_by(ow) %>%
+  #   dplyr::filter(!is.na(Value)) %>%
+  #   dplyr::filter(Date == max(Date))
 
   if (all(!is.na(ows))) {
 
-    if (any(!ows %in% unique(latest_date$ow)))
+    # if (any(!ows %in% unique(latest_date$ow)))
+    if (any(!ows %in% well_list))
       stop(paste0("ows wells not in original list: ", list(ows[!ows %in% unique(latest_date$ow)])), call. = FALSE)
 
-    latest_date <- latest_date %>%
-      dplyr::filter(ow %in% ows)
+    # latest_date <- latest_date %>%
+    #   dplyr::filter(ow %in% ows)
+    well_list <- well_list[well_list %in% ows]
+
   }
 
   p <- list()
-  for (ow in unique(latest_date$ow)) {
+  #  for (ow in unique(latest_date$ow)) {
+  for (ow in well_list) {
     full <- dplyr::filter(data$w_full, ow == !!ow)
     full_all <- dplyr::filter(data$w_full_all, ow == !!ow)
     hist <- dplyr::filter(data$w_hist, ow == !!ow)
-    date <- dplyr::filter(latest_date, ow == !!ow)
+    #date <- dplyr::filter(latest_date, ow == !!ow)
 
     min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
                                        TRUE ~ NA_real_)
@@ -232,6 +237,7 @@ gw_historic_data_plot <- function(data, ows = NA){
 #' @export
 gw_both_plots <- function(data, ows = NA){
 
+  well_list <- data$ows
   latest_date <- data$w_dates %>%
     dplyr::group_by(ow) %>%
     dplyr::filter(!is.na(Value)) %>%
@@ -239,15 +245,18 @@ gw_both_plots <- function(data, ows = NA){
 
   if (all(!is.na(ows))) {
 
-    if (any(!ows %in% unique(latest_date$ow)))
+    # if (any(!ows %in% unique(latest_date$ow)))
+    if (any(!ows %in% well_list))
       stop(paste0("ows wells not in original list: ", list(ows[!ows %in% unique(latest_date$ow)])), call. = FALSE)
 
-    latest_date <- latest_date %>%
-      dplyr::filter(ow %in% ows)
+    # latest_date <- latest_date %>%
+    #   dplyr::filter(ow %in% ows)
+    well_list <- well_list[well_list %in% ows]
   }
 
   p <- list()
-  for (ow in unique(latest_date$ow)) {
+  #  for (ow in unique(latest_date$ow)) {
+  for (ow in well_list) {
     full <- dplyr::filter(data$w_full, ow == !!ow)
     full_all <- dplyr::filter(data$w_full_all, ow == !!ow)
     hist <- dplyr::filter(data$w_hist, ow == !!ow)
@@ -287,6 +296,139 @@ get_obs_in_area <- function(nr_area = c("North Natural Resource Area",
     dplyr::pull(Well)
 }
 
+
+
+
+#' Generate and save plots and a csv percentiles file from all wells in obswell_locations for drought
+#' @param plots_dir Location to save all plots
+#' @param table_dir Location to save csv table with percentiles
+#'
+#' @export
+generate_well_percentiles <- function(#region,
+  plots_dir = ".",
+  table_dir = "."){
+
+  well_list_table <- read.csv("data-raw/obswell_locations.csv", na.strings = "")# %>%
+  #  dplyr::filter(Region_Drought == "Thompson-Okanagan")
+
+  well_list <- well_list_table %>%
+    dplyr::filter(!is.na(Region_Drought)) %>%
+    dplyr::pull(Well)
+
+  gw_data <- gw_data_prep(ows = well_list,
+                          n_days = 14,report_dates = Sys.Date(),years_min = 5,cache_age = 7)
+
+  map <- gw_percentile_map(gw_data)
+  htmlwidgets::saveWidget(map, file = paste0(plots_dir, "province_map.html"))
+
+  summary <- gw_percentile_class_table(gw_data, gt = TRUE)
+  gt::gtsave(summary, filename = paste0(plots_dir, "province_class_summary.png"))
+
+
+  table <- gw_percentiles_details_table(gw_data, gt = FALSE) %>%
+    dplyr::select(-Area, -Location)
+  wells_sf <- data_load("wells_sf") %>%
+    dplyr::rename(Well = ow) %>%
+    dplyr::filter(Well %in% well_list)#%>%
+  # dplyr::mutate(Latitude = sf::st_coordinates(.)[,1],
+  #               Logitude = sf::st_coordinates(.)[,2])
+
+
+  table_save <- wells_sf %>%
+    dplyr::left_join(table, by = "Well") %>%
+    dplyr::left_join(well_list_table, by = "Well") %>%
+    dplyr::mutate(Latitude = NA,
+                  Longitude = NA,
+                  Hydrograph_url = NA,
+                  Updated_Time = Sys.time()) %>%
+    dplyr::select(Well, Location = Location_Long, Latitude, Longitude, Class, Percentile, n_Years, Latest_Date, Approval,
+                  Aquifer = aquifer_id, Aquifer_Type, Hydraulic_Connection, Hydrograph_url, Updated_Time)
+
+
+  write.csv(table_save, paste0(table_dir, "groundwater_percentiles.csv"), row.names = FALSE, na = "")
+  # sf::st_write(table_save, "groundwater_percentiles.shp", delete_layer = TRUE)
+
+
+  plots <- gw_both_plots(gw_data)
+
+
+  for (well in names(plots)) {
+    message(paste0("Saving plot for ", well, " (", match(well, names(plots)), "/", length(names(plots)),")"))
+
+    ggplot2::ggsave(plot = plots[[well]],
+                    filename = paste0(plots_dir, well, ".png"),
+                    height = 9, width = 9.5)
+
+  }
+
+  #return(plots)
+
+}
+
+
+#' Generate and save regional plots and reports grouped by region in obswell_locations for drought
+#' @param region Region to create reports/plot. One of c("Skeena", "Northeast", "Omineca", "South Coast",
+#'  "Thompson-Okanagan", "Kootenay-Boundary", "Cariboo", "West Coast")
+#' @param write_report Logical, choose to save reports
+#' @param write_plots Logical, choose to save plots
+#' @param report_dir Location to save regional reports
+#' @param plots_dir Location to save regional plots and tables
+#'
+#' @export
+generate_regional_reports <- function(region,
+                                      write_report = TRUE,
+                                      write_plots = TRUE,
+                                      report_dir = ".",
+                                      plots_dir = "."){
+
+
+  well_list <- read.csv("data-raw/obswell_locations.csv", na.strings = "") %>%
+    dplyr::filter(Region_Drought == region) %>%
+    dplyr::pull(Well)
+
+  if (write_report){
+
+    well_report(ows = well_list,
+                report_dates = c(Sys.Date()),
+                title = paste0(region, " Natural Resource Region Groundwater Level Conditions"),
+                description = paste0("The following provides an overview of groundwater (GW) conditions in the ",
+                                     region, " Natural Resource Region as of ",
+                                     format(Sys.Date(), format = "%B %d, %Y"), "."),
+                n_days = 14,
+                years_min = 5,
+                out_dir = report_dir,
+                cache_age = 7,
+                name = paste0(region))
+
+  }
+
+  if (write_plots) {
+
+    gw_data <- gw_data_prep(ows = well_list,
+                            n_days = 14,report_dates = Sys.Date(),years_min = 5,cache_age = 7)
+
+
+    map <- gw_percentile_map(gw_data)
+    htmlwidgets::saveWidget(map, file = paste0(plots_dir,  region, "_map.html"))
+
+    summary <- gw_percentile_class_table(gw_data, gt = TRUE)
+    gt::gtsave(summary, filename = paste0(plots_dir,  region, "_class_summary.png"))
+
+    bnorm_tot <- gw_wells_below_normal_table(gw_data, which = "totals", gt = TRUE)
+    gt::gtsave(bnorm_tot, filename = paste0(plots_dir,  region, "_belownorm_total.png"))
+
+    bnorm_hyd <- gw_wells_below_normal_table(gw_data, which = "hydraulic_connectivity", gt = TRUE)
+    gt::gtsave(bnorm_hyd, filename = paste0(plots_dir,  region, "_belownorm_hydcond.png"))
+
+    bnorm_type <- gw_wells_below_normal_table(gw_data, which = "type", gt = TRUE)
+    gt::gtsave(bnorm_type, filename = paste0(plots_dir,  region, "_belownorm_aqtype.png"))
+
+    details <- gw_percentiles_details_table(gw_data, gt = TRUE)
+    gt::gtsave(details, filename = paste0(plots_dir,  region, "_welldetails.png"))
+
+  }
+
+}
 
 # gw_percentile_map <- function(ows,
 #                               #name = "report",

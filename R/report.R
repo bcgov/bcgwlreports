@@ -133,7 +133,8 @@ well_report <- function(ows, name = "report",
                                   "n_days" = n_days,
                                   "years_min" = years_min),
                     output_dir = out_dir,
-                    output_file = glue::glue("{name}_{Sys.Date()}.html"),
+                    output_file = glue::glue("{name}.html"),
+#                    output_file = glue::glue("{name}_{Sys.Date()}.html"),
                     quiet = TRUE)
 
   # rmarkdown::render(system.file("rmd_report", "report_pdf.Rmd", package = "bcgwlreports"),

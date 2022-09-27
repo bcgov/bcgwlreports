@@ -127,13 +127,26 @@ well_map <- function(details, format = "html") {
   regions <- data_load("regions") %>%
     sf::st_transform(4326)
 
+  nr_regions <- bcmaps::nr_regions()%>%
+    sf::st_transform(4326)
+  # aquifers <- bcmaps::gw_aquifers()%>%
+  #   sf::st_transform(4326)
 
+  bounds <- locs %>%
+    sf::st_bbox() %>%
+    as.character()
 
   leaflet::leaflet(data = locs) %>%
-   # leaflet::addTiles(group = "OpenStreetMap") %>%
+    # leaflet::addTiles(group = "OpenStreetMap") %>%
     leaflet::addProviderTiles(leaflet::providers$Stamen.Terrain, group = "Stamen (Terrain)") %>%
     leaflet::addProviderTiles(leaflet::providers$Esri.NatGeoWorldMap, group = "ESRI NatGeoWorldMap") %>%
     leaflet::addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "ESRI WorldImagery") %>%
+    leaflet::addPolygons(data = nr_regions, group = "NR Regions",
+                         color = "darkblue", fill = FALSE,
+                         weight = 1.5) %>%
+    # leaflet::addPolygons(data = aquifers, group = "Aquifers",
+    #                      color = "darkgreen", fill = FALSE,
+    #                      weight = 1.5) %>%
     leaflet::addCircleMarkers(color = "black",
                               fillColor = ~perc_pal(class), weight = 1,
                               fillOpacity = 1, radius = 7,
@@ -142,14 +155,16 @@ well_map <- function(details, format = "html") {
                                 noHide = FALSE, textOnly = TRUE, direction = "top",
                                 style = list("font-weight" = "bold",
                                              "font-size" = "12px"))
-                             # , clusterOptions = leaflet::markerClusterOptions(maxClusterRadius = 0.1)
-                              ) %>%
+                              # , clusterOptions = leaflet::markerClusterOptions(maxClusterRadius = 0.1)
+    ) %>%
+    leaflet::fitBounds(bounds[1], bounds[2], bounds[3], bounds[4]) %>%
     leaflet::addLegend("topright", title = "Groundwater Levels",
                        colors = c(perc_values$colour, "#808080"),
                        labels = c(perc_values$nice, "Not Available")) %>%
     leaflet::addLayersControl(
       baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),
-      position = "topleft")#"OpenStreetMap",
+      overlayGroups = c("NR Regions"),#,"Aquifers"
+      position = "topright")#"OpenStreetMap",
 }
 
 

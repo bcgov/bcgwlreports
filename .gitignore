@@ -11,4 +11,11 @@ reports/south_area_reports
 reports/south_coast_reports
 reports/west_coast_reports
 reports/north_area_reports
+drought_reg_plots/
+drought_reports/
+drought_well_plots/
+groundwater_percentiles.csv
+new_functions_testing.R
+reports/drought_portal_script.R
+percentile timeseries.R
 misc
