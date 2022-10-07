@@ -30,9 +30,10 @@ well_prep <- function(ows, water_year_start, report_dates,
 }
 
 well_clean <- function(w, water_year_start, report_dates) {
-  w %>%
+
+  w2 <- w %>%
     dplyr::select(-"myLocation") %>%
-    dplyr::mutate(Date = lubridate::as_date(.data$Time)) %>%
+    dplyr::mutate(Date = as.Date(.data$Time)) %>%
     dplyr::group_by(.data$Date) %>%
     # makes a day "Working" if any hour is "Working"
     dplyr::mutate(Approval = dplyr::case_when(
@@ -42,8 +43,16 @@ well_clean <- function(w, water_year_start, report_dates) {
     dplyr::group_by(.data$Date, .data$Approval) %>%
     dplyr::summarise(Value = mean(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     tidyr::complete(Date = !!report_dates) %>%
+    #dplyr::arrange(Date) %>%
+    #  dplyr::mutate(min= dplyr::case_when(lubridate::month(min(.$Date)) < 10 ~
+    #                            as.Date(paste0(lubridate::year(min(.$Date))-1,"-10-01")),
+    #                            TRUE ~ as.Date(paste0(lubridate::year(min(.$Date)),"-10-01"))))
     # Fill in dates with missing values with NA and add various date columns
-    fasstr::fill_missing_dates(water_year_start = water_year_start) %>%
+    #fasstr::fill_missing_dates(water_year_start = 10) %>%
+    tidyr::complete(Date = seq.Date(
+      as.Date(paste0(ifelse(lubridate::month(min(.$Date)) <10, lubridate::year(min(.$Date))-1, lubridate::year(min(.$Date))+1),"-10-01")),
+      as.Date(paste0(ifelse(lubridate::month(max(.$Date)) <10, lubridate::year(max(.$Date))-1, lubridate::year(max(.$Date))+1),"-09-30")),
+      by="day")) %>%
     fasstr::add_date_variables(water_year_start = water_year_start) %>%
     # If filled with NA, make "Working" and categorize data for historic/recent
     dplyr::mutate(Approval = dplyr::if_else(is.na(.data$Approval), "Working", .data$Approval),
@@ -152,11 +161,11 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
 
 well_hist_compare <- function(w_dates, w_hist) {
   # if (nrow(w_dates) > 0) {
-    w_comp <- w_dates %>%
-      dplyr::left_join(w_hist, by = c("ow", "DayofYear", "n_years", "quality_hist")) %>%
-      dplyr::mutate(percentile = purrr::map2_dbl(
-        .data$p, .data$Value,
-        ~{if(!is.null(.x)) .x(.y) else NA_real_}))
+  w_comp <- w_dates %>%
+    dplyr::left_join(w_hist, by = c("ow", "DayofYear", "n_years", "quality_hist")) %>%
+    dplyr::mutate(percentile = purrr::map2_dbl(
+      .data$p, .data$Value,
+      ~{if(!is.null(.x)) .x(.y) else NA_real_}))
 
 }
 

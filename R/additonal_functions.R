@@ -235,7 +235,7 @@ gw_historic_data_plot <- function(data, ows = NA){
 #' @param ows List a specific well to plot from original listed wells (exports just this well)
 #'
 #' @export
-gw_both_plots <- function(data, ows = NA){
+gw_both_plots <- function(data, ows = NA, water_year_start = 10){
 
   well_list <- data$ows
   latest_date <- data$w_dates %>%
@@ -264,7 +264,7 @@ gw_both_plots <- function(data, ows = NA){
 
     min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
                                        TRUE ~ NA_real_)
-    p1 <- well_plot_perc(full, hist, date, years_min, water_year = data$wy, info = paste0(ow, " "))
+    p1 <- well_plot_perc(full, hist, date, years_min, water_year = data$wy, info = paste0(ow, " "), water_year_start = water_year_start)
     p2 <- well_plot_hist(full_all, hist, vline_date = min_daily_date, info = paste0(ow, " "))
 
     p_both <- p1 / p2
@@ -331,7 +331,7 @@ generate_well_percentiles <- function(#region,
     dplyr::rename(Well = ow) %>%
     dplyr::filter(Well %in% well_list)#%>%
   # dplyr::mutate(Latitude = sf::st_coordinates(.)[,1],
-  #               Logitude = sf::st_coordinates(.)[,2])
+  #               Longitude = sf::st_coordinates(.)[,2])
 
 
   table_save <- wells_sf %>%
@@ -427,6 +427,119 @@ generate_regional_reports <- function(region,
     gt::gtsave(details, filename = paste0(plots_dir,  region, "_welldetails.png"))
 
   }
+
+}
+
+
+
+
+#' Generate and save regional plots and reports grouped by region in obswell_locations for drought
+#' @param region Region to create reports/plot. One of c("Skeena", "Northeast", "Omineca", "South Coast",
+#'  "Thompson-Okanagan", "Kootenay-Boundary", "Cariboo", "West Coast")
+#' @param write_report Logical, choose to save reports
+#' @param write_plots Logical, choose to save plots
+#' @param report_dir Location to save regional reports
+#' @param plots_dir Location to save regional plots and tables
+#'
+#' @export
+generate_drought_reports <- function(region = NA,
+                                     write_report = TRUE,
+                                     write_plots = TRUE,
+                                     report_dir = "",
+                                     reg_plots_dir = "",
+                                     well_plots_dir = "",
+                                     table_dir = ""){
+
+  # prepare region variable
+  if (all(is.na(region))) {
+    region <- read.csv("data-raw/obswell_locations.csv", na.strings = "") %>%
+      dplyr::filter(!is.na(Region_Drought)) %>%
+      dplyr::pull(Region_Drought) %>%
+      unique()
+  } else {
+    # make sure listed regions are in obswell_locations.csv file, stop error/message
+  }
+
+  # download and filter obswell_locations data and filter for regions
+  well_list_table <- read.csv("data-raw/obswell_locations.csv", na.strings = "") %>%
+    dplyr::filter(Region_Drought %in% region)
+
+
+
+  combined_table <- dplyr::tibble()
+
+  # loop through each region
+  for (rgn in region) {
+
+    message(paste0("----  Starting region: " , rgn, " (", match(rgn, region), "/", length(region),")"))
+
+
+    well_list <- well_list_table %>%
+      dplyr::filter(Region_Drought == rgn) %>%
+      dplyr::pull(Well)
+
+    rgn_label <- ifelse(rgn == "North", "Natural Resource Area", "Natural Resource Region")
+
+    if (write_report){
+
+      well_report(ows = well_list,
+                  report_dates = c(Sys.Date()),
+                  title = paste0(rgn, " ", rgn_label," Groundwater Level Conditions"),
+                  description = paste0("The following provides an overview of groundwater (GW) conditions in the ",
+                                       rgn, " ", rgn_label," as of ",
+                                       format(Sys.Date(), format = "%B %d, %Y"), "."),
+                  n_days = 14,
+                  years_min = 5,
+                  out_dir = report_dir,
+                  cache_age = 7,
+                  name = paste0(rgn))
+
+    }
+
+    if (write_plots) {
+
+      message(paste0("----  Starting to save maps and tables"))
+      gw_data <- gw_data_prep(ows = well_list,
+                              n_days = 14,report_dates = Sys.Date(),years_min = 5,cache_age = 7)
+
+
+      map <- gw_percentile_map(gw_data)
+      htmlwidgets::saveWidget(map, file = paste0(reg_plots_dir,  rgn, "_map.html"))
+
+      summary <- gw_percentile_class_table(gw_data, gt = TRUE)
+      gt::gtsave(summary, filename = paste0(reg_plots_dir,  rgn, "_class_summary.png"))
+
+      bnorm_tot <- gw_wells_below_normal_table(gw_data, which = "totals", gt = TRUE)
+      gt::gtsave(bnorm_tot, filename = paste0(reg_plots_dir,  rgn, "_belownorm_total.png"))
+
+      bnorm_hyd <- gw_wells_below_normal_table(gw_data, which = "hydraulic_connectivity", gt = TRUE)
+      gt::gtsave(bnorm_hyd, filename = paste0(reg_plots_dir,  rgn, "_belownorm_hydcond.png"))
+
+      bnorm_type <- gw_wells_below_normal_table(gw_data, which = "type", gt = TRUE)
+      gt::gtsave(bnorm_type, filename = paste0(reg_plots_dir,  rgn, "_belownorm_aqtype.png"))
+
+      details <- gw_percentiles_details_table(gw_data, gt = TRUE)
+      gt::gtsave(details, filename = paste0(reg_plots_dir,  rgn, "_welldetails.png"))
+
+      details_table <- gw_percentiles_details_table(gw_data, gt = FALSE)
+      combined_table <- dplyr::bind_rows(combined_table, details_table)
+
+      message(paste0("----  Starting to create plots...."))
+      plots <- gw_both_plots(gw_data)
+      message(paste0("----  ....starting to save plots"))
+      for (well in names(plots)) {
+        message(paste0("Saving plot for ", well, " (", match(well, names(plots)), "/", length(names(plots)),")"))
+
+        ggplot2::ggsave(plot = plots[[well]],
+                        filename = paste0(well_plots_dir, well, ".png"),
+                        height = 9, width = 9.5)
+
+      }
+
+    }
+  }
+
+  write.csv(combined_table, paste0(table_dir, "groundwater_percentiles_new.csv"), row.names = FALSE, na = "")
 
 }
 

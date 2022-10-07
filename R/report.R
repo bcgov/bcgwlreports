@@ -70,7 +70,8 @@ well_report <- function(ows, name = "report",
                                          Sys.Date() - lubridate::weeks(4)),
                         title = NULL, description = NULL, remarks = NULL,
                         n_days = 13, years_min = 5, out_dir = ".",
-                        cache_age = 7) {
+                        cache_age = 7,
+                        water_year_start = 10) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
@@ -99,7 +100,7 @@ well_report <- function(ows, name = "report",
 
   message(glue::glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
 
-  w_full_all <- well_prep(ows, water_year_start = 10, report_dates,
+  w_full_all <- well_prep(ows, water_year_start = water_year_start, report_dates,
                           exclude_non_continuous = FALSE)
 
   f <- function(x) { rev(cumsum(!is.na(rev(x)))) != 0 }

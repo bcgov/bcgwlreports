@@ -127,7 +127,7 @@ well_map <- function(details, format = "html") {
   regions <- data_load("regions") %>%
     sf::st_transform(4326)
 
-  nr_regions <- bcmaps::nr_regions()%>%
+  nr_regions <- suppressMessages(bcmaps::nr_regions())%>%
     sf::st_transform(4326)
   # aquifers <- bcmaps::gw_aquifers()%>%
   #   sf::st_transform(4326)
@@ -162,8 +162,8 @@ well_map <- function(details, format = "html") {
                        colors = c(perc_values$colour, "#808080"),
                        labels = c(perc_values$nice, "Not Available")) %>%
     leaflet::addLayersControl(
-      baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),
-      overlayGroups = c("NR Regions"),#,"Aquifers"
+      overlayGroups = c("NR Regions"),
+      baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),#,"Aquifers"
       position = "topright")#"OpenStreetMap",
 }
 
@@ -190,9 +190,10 @@ well_plots_base <- function(title = "", legend = "right", caption = NA, subtitle
 }
 
 well_plot_perc <- function(full, hist, latest_date = NULL,
-                           years_min, water_year, legend = "right", info = "") {
+                           years_min, water_year, legend = "right", info = "", water_year_start = 10) {
 
-  origin <- as.Date("1998-09-30")
+ # origin <- as.Date("1998-09-30")
+  origin <- as.Date(paste0("1998-", water_year_start,"-01"))-1
 
   # Change names for approval
   full <- full %>%

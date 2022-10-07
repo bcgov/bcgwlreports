@@ -38,7 +38,8 @@ gw_data_prep <- function(ows,
                          remarks = NULL,
                          n_days = 14,
                          years_min = 5,
-                         cache_age = 7) {
+                         cache_age = 7,
+                         water_year_start = 10) {
 
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
@@ -63,7 +64,7 @@ gw_data_prep <- function(ows,
 
   message(glue::glue("- Fetching/cleaning obs well data ({length(ows)} wells)"))
 
-  w_full_all <- well_prep(ows, water_year_start = 10, report_dates,
+  w_full_all <- well_prep(ows, water_year_start = water_year_start, report_dates,
                           exclude_non_continuous = FALSE)
 
   f <- function(x) { rev(cumsum(!is.na(rev(x)))) != 0 }

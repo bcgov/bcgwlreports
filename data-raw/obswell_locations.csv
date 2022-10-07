@@ -1,19 +1,19 @@
 Well,Area,Subarea,Location,Location_Long,Region_Drought
-OW089,North Natural Resource Area,Skeena,Smithers,Smithers (Corner Powell & Lund),Skeena
-OW124,North Natural Resource Area,Northeast,Charlie Lake,Charlie Lake,Northeast
-OW200,North Natural Resource Area,Skeena,Dease Lake,Dease Lake,Skeena
-OW286,North Natural Resource Area,Northeast,Tumbler Ridge,Tumbler Ridge,Northeast
-OW293,North Natural Resource Area,Omineca,Ferguson Lake,Ferguson Lake (N. Kelly Rd.),Omineca
-OW377,North Natural Resource Area,Skeena,Smithers,Smithers,Skeena
-OW378,North Natural Resource Area,Omineca,Prince George,Prince George (at 5th and Ospika),Omineca
-OW386,North Natural Resource Area,Skeena,Houston,Houston,Skeena
-OW416,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (Lineham RD AND 275 RD),Northeast
-OW417,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (267 RD AND 214 RD),Northeast
-OW418,North Natural Resource Area,Northeast,Dawson Creek Area / Farmington,Dawson Creek Area / Farmington (235 Rd And Sweetwater Rd),Northeast
-OW420,North Natural Resource Area,Northeast,Dawson Creek Area,Dawson Creek Area (229 Rd And 212 Rd),Northeast
-OW445,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (273 Rd And 208 Rd),Northeast
-OW455,North Natural Resource Area,Omineca,Vanderhoof,Vanderhoof,Omineca
-OW482,North Natural Resource Area,Northeast,Fort Nelson,Fort Nelson (Muskwa river bend),Northeast
+OW089,North Natural Resource Area,Skeena,Smithers,Smithers (Corner Powell & Lund),North
+OW124,North Natural Resource Area,Northeast,Charlie Lake,Charlie Lake,North
+OW200,North Natural Resource Area,Skeena,Dease Lake,Dease Lake,North
+OW286,North Natural Resource Area,Northeast,Tumbler Ridge,Tumbler Ridge,North
+OW293,North Natural Resource Area,Omineca,Ferguson Lake,Ferguson Lake (N. Kelly Rd.),North
+OW377,North Natural Resource Area,Skeena,Smithers,Smithers,North
+OW378,North Natural Resource Area,Omineca,Prince George,Prince George (at 5th and Ospika),North
+OW386,North Natural Resource Area,Skeena,Houston,Houston,North
+OW416,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (Lineham RD AND 275 RD),North
+OW417,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (267 RD AND 214 RD),North
+OW418,North Natural Resource Area,Northeast,Dawson Creek Area / Farmington,Dawson Creek Area / Farmington (235 Rd And Sweetwater Rd),North
+OW420,North Natural Resource Area,Northeast,Dawson Creek Area,Dawson Creek Area (229 Rd And 212 Rd),North
+OW445,North Natural Resource Area,Northeast,Dawson Creek Area / Groundbirch,Dawson Creek Area / Groundbirch (273 Rd And 208 Rd),North
+OW455,North Natural Resource Area,Omineca,Vanderhoof,Vanderhoof,North
+OW482,North Natural Resource Area,Northeast,Fort Nelson,Fort Nelson (Muskwa river bend),North
 OW002,South Coast Region,Lower Mainland / Fraser Valley,Abbotsford,"Abbotsford (Airport, Huntingdon Rd W Of Clearbrook Rd)",South Coast
 OW008,South Coast Region,Lower Mainland / Fraser Valley,Abbotsford,Abbotsford (Vye Rd E Of Mccallum Rd),South Coast
 OW255,South Coast Region,Lower Mainland / Fraser Valley,Chilliwack,Chilliwack (Yarrow Ratzlaff Rd),South Coast
