@@ -21,7 +21,7 @@ bcgwlreports::well_report (ows = westc_wells,
                            years_min = 5,
                            out_dir = "reports/west_coast_reports",
                            cache_age = 7,
-                           name = "west_coast_region")
+                           name = paste0("west_coast_region_", Sys.Date()))
 
 
 

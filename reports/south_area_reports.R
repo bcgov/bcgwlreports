@@ -34,7 +34,7 @@ bcgwlreports::well_report (ows = south_wells,
                            years_min = 5,
                            out_dir = "reports/south_area_reports",
                            cache_age = 7,
-                           name = "south_area_OBWB")
+                           name = paste0("south_area_OBWB_", Sys.Date()))
 
 
 
@@ -59,7 +59,8 @@ bcgwlreports::well_report (ows = south_wells,
                            years_min = 5,
                            out_dir = "reports/south_area_reports",
                            cache_age = 7,
-                           name = "south_area_regional")
+                           name = paste0("south_area_regional_", Sys.Date()))
+
 
 
 
@@ -95,7 +96,8 @@ bcgwlreports::well_report (ows = kb_wells,
                            years_min = 5,
                            out_dir = "reports/south_area_reports",
                            cache_age = 7,
-                           name = "Kootenay-Boundary_drought_reports")
+                           name = paste0("Kootenay-Boundary_drought_reports_", Sys.Date()))
+
 
 
 ## Thompson-Okanagan Wells (filtered for stations)
@@ -127,5 +129,6 @@ bcgwlreports::well_report (ows = to_wells,
                            years_min = 5,
                            out_dir = "reports/south_area_reports",
                            cache_age = 7,
-                           name = "Thompson-Okanagan_drought_reports")
+                           name = paste0("Thompson-Okanagan_drought_reports_", Sys.Date()))
+
 

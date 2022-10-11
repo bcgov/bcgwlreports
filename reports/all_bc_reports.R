@@ -30,7 +30,5 @@ bcgwlreports::well_report(ows,
                           years_min = 5,
                           out_dir = "reports/province_reports",
                           cache_age = 7,
-                          name = ifelse(length(region_id) == 4, "BC", region_id)#,
-                          # remarks =
-)
-
+                          name = paste0( ifelse(length(region_id) == 4, "BC", region_id),
+                                         "_", Sys.Date()))
