@@ -403,7 +403,7 @@ The top date is then chosen for that well and that reporting date.
 This table lists the original reporting dates, and the actual dates used for each 
 observation well. 
 
-```{r appendix}
+```{r appendix, warning=FALSE}
 w_dates %>%
   well_meta() %>%
   dplyr::select("region", "area", "location", "ow", "report_dates", "Date") %>%
