@@ -152,7 +152,7 @@ In general, a groundwater level value that is:
 ## Groundwater Level Conditions {#map}
 
 
-```{r wells_map}
+```{r wells_map, warning=FALSE}
 details <- well_table_summary(w_dates, w_hist, perc_values, full_window)
 well_map(details)
 ```
@@ -163,7 +163,7 @@ well_map(details)
 
 <font size="4"> <center> **Wells by Percentile Class** </center>  </font> 
 
-```{r percentile_class}
+```{r percentile_class, warning=FALSE}
 t <- well_table_status(w_perc, perc_values, window)
 
 # Get footnotes needed
@@ -187,7 +187,7 @@ This section reports on the number and total proportion of wells below normal or
 
 ### All Wells
 
-```{r wells_below_normal_overall}
+```{r wells_below_normal_overall, warning=FALSE}
 t <- well_table_below_norm(w_perc, window, which = "totals")
 
 # Get footnotes needed
@@ -204,7 +204,7 @@ t %>%
 
 ### By Hydraulic Connectivity
 
-```{r wells_below_normal_type}
+```{r wells_below_normal_type, warning=FALSE}
 t <- well_table_below_norm(w_perc, window, which = "hydraulic_connectivity")
 
 # Get footnotes needed
@@ -225,7 +225,7 @@ t %>%
 ### By Aquifer Type
 
 
-```{r wells_below_normal_connectivity}
+```{r wells_below_normal_connectivity, warning=FALSE}
 t <- well_table_below_norm(w_perc, window, which = "type")
 
 # Get footnotes needed
