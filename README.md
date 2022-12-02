@@ -5,7 +5,7 @@
 coverage](https://codecov.io/gh/bcgov/bcgwlreports/branch/main/graph/badge.svg)](https://app.codecov.io/gh/bcgov/bcgwlreports?branch=main)
 <!-- badges: end -->
 
-# BC Groundwater Level Review Report
+# BC Groundwater Level Percentiles Report
 
 [![img](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
