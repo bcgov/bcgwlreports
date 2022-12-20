@@ -4,7 +4,7 @@
 \alias{gw_both_plots}
 \title{Create both percentiles and historical plot with selected observation wells}
 \usage{
-gw_both_plots(data, ows = NA)
+gw_both_plots(data, ows = NA, water_year_start = 10)
 }
 \arguments{
 \item{data}{Data object created from \code{gw_data_prep()} function.}

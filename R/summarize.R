@@ -159,6 +159,20 @@ well_dates <- function(w_full, w_hist, report_dates, n_days) {
   #   dplyr::select(-"keep")
 }
 
+well_recent_dates <- function(w_full, w_hist, report_dates, n_days) {
+
+  w_full %>%
+    dplyr::filter(!is.na(Value)) %>%
+    dplyr::group_by(ow) %>%
+    dplyr::filter(Date == max(Date)) %>%
+    dplyr::filter(!is.na(ow)) %>%
+    dplyr::left_join(
+      dplyr::select(w_hist, "ow", "DayofYear", "quality_hist", "n_years"),
+      by = c("ow", "DayofYear")) %>%
+    dplyr::mutate(Current = ifelse(Date < (report_dates[1] - n_days), FALSE, TRUE))
+
+}
+
 well_hist_compare <- function(w_dates, w_hist) {
   # if (nrow(w_dates) > 0) {
   w_comp <- w_dates %>%

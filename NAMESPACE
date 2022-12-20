@@ -3,6 +3,8 @@
 export(clean_cache)
 export(get_obs_in_area)
 export(gw_both_plots)
+export(gw_conditions)
+export(gw_conditions_save)
 export(gw_data_prep)
 export(gw_historic_data_plot)
 export(gw_percentile_class_table)

@@ -41,6 +41,7 @@ gw_data_prep <- function(ows,
                          cache_age = 7,
                          water_year_start = 10) {
 
+
   check_numeric(n_days, type = "n_days", lower = 0)
   check_numeric(years_min, type = "years_min", lower = 1)
   check_numeric(cache_age, type = "cache_age", lower = 0)
@@ -78,6 +79,9 @@ gw_data_prep <- function(ows,
 
   message("- Calculating best report dates")
   w_dates <- well_dates(w_full, w_hist, report_dates, n_days)
+  w_dates_latest <- well_recent_dates(w_full = w_full, w_hist = w_hist,
+                                      report_dates = report_dates[1], n_days = n_days)%>%
+    dplyr::mutate(report_dates = Date)
   # return(w_dates)
 
   message("- Comparing current to historical data")
@@ -114,6 +118,7 @@ gw_data_prep <- function(ows,
 
   # Create table
   details <- well_table_summary(w_dates, w_hist, perc_values, full_window)
+  details_latest <- well_table_summary(w_dates_latest, w_hist, perc_values, full_window)
 
 
   return(list("ows" = ows,
@@ -122,9 +127,11 @@ gw_data_prep <- function(ows,
               "w_full" = w_full,
               "w_hist" = w_hist,
               "w_dates" = w_dates,
+              "w_dates_latest" = w_dates_latest,
               "w_comp" = w_comp,
               "w_perc" = w_perc,
               "details" = details,
+              "details_latest" = details_latest,
               "report_dates" = report_dates,
               "n_days" = n_days,
               "years_min" = years_min,

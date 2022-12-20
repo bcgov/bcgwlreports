@@ -10,7 +10,8 @@ gw_data_prep(
   remarks = NULL,
   n_days = 14,
   years_min = 5,
-  cache_age = 7
+  cache_age = 7,
+  water_year_start = 10
 )
 }
 \arguments{

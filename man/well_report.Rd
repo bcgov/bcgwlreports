@@ -14,7 +14,8 @@ well_report(
   n_days = 13,
   years_min = 5,
   out_dir = ".",
-  cache_age = 7
+  cache_age = 7,
+  water_year_start = 10
 )
 }
 \arguments{
