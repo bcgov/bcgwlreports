@@ -157,6 +157,7 @@ well_map <- function(details, format = "html") {
                               fillColor = ~perc_pal(class), weight = 1,
                               fillOpacity = 1, radius = 7,
                               popup = ~tooltip, label = ~ow,
+                              group = "Wells with Percentiles",
                               labelOptions = leaflet::labelOptions(
                                 noHide = FALSE, textOnly = TRUE, direction = "top",
                                 style = list("font-weight" = "bold",
@@ -166,9 +167,9 @@ well_map <- function(details, format = "html") {
     leaflet::addCircleMarkers(data = locs_na,
                               color = "black",
                               fillColor = ~perc_pal(class), weight = 1,
-                              fillOpacity = 1, radius = 5,
+                              fillOpacity = 1, radius = 5.5,
                               popup = ~tooltip, label = ~ow,
-                              group = "Not Available Wells",
+                              group = "Wells with No Percentiles",
                               labelOptions = leaflet::labelOptions(
                                 noHide = FALSE, textOnly = TRUE, direction = "top",
                                 style = list("font-weight" = "bold",
@@ -180,10 +181,10 @@ well_map <- function(details, format = "html") {
                        colors = c(perc_values$colour, "#808080"),
                        labels = c(perc_values$nice, "Not Available")) %>%
     leaflet::addLayersControl(
-      overlayGroups = c("Not Available Wells", "NR Regions"),
+      overlayGroups = c("Wells with Percentiles", "Wells with No Percentiles", "NR Regions"),
       baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),#,"Aquifers"
       position = "topright")%>%
-    leaflet::hideGroup("Not Available Wells")#"OpenStreetMap",
+    leaflet::hideGroup("Wells with No Percentiles")#"OpenStreetMap",
 }
 
 
