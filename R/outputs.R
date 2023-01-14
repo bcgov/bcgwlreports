@@ -122,6 +122,12 @@ well_map <- function(details, format = "html") {
       tooltip = purrr::map(.data$tooltip, gt::html),
       class = factor(class, levels = perc_values$nice))
 
+  locs_na <- locs %>%
+    dplyr::filter(is.na(class))
+
+  locs <- locs %>%
+    dplyr::filter(!is.na(class))
+#return(locs_na)
   perc_pal <- leaflet::colorFactor(perc_values$colour, levels = perc_values$nice)
 
   regions <- data_load("regions") %>%
@@ -157,14 +163,27 @@ well_map <- function(details, format = "html") {
                                              "font-size" = "12px"))
                               # , clusterOptions = leaflet::markerClusterOptions(maxClusterRadius = 0.1)
     ) %>%
+    leaflet::addCircleMarkers(data = locs_na,
+                              color = "black",
+                              fillColor = ~perc_pal(class), weight = 1,
+                              fillOpacity = 1, radius = 7,
+                              popup = ~tooltip, label = ~ow,
+                              group = "Not Available Wells",
+                              labelOptions = leaflet::labelOptions(
+                                noHide = FALSE, textOnly = TRUE, direction = "top",
+                                style = list("font-weight" = "bold",
+                                             "font-size" = "12px"))
+                              # , clusterOptions = leaflet::markerClusterOptions(maxClusterRadius = 0.1)
+    ) %>%
     leaflet::fitBounds(bounds[1], bounds[2], bounds[3], bounds[4]) %>%
     leaflet::addLegend("topright", title = "Groundwater Levels",
                        colors = c(perc_values$colour, "#808080"),
                        labels = c(perc_values$nice, "Not Available")) %>%
     leaflet::addLayersControl(
-      overlayGroups = c("NR Regions"),
+      overlayGroups = c("Not Available Wells", "NR Regions"),
       baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),#,"Aquifers"
-      position = "topright")#"OpenStreetMap",
+      position = "topright")%>%
+    leaflet::hideGroup("Not Available Wells")#"OpenStreetMap",
 }
 
 

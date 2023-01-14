@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 
-#' Create a percentiles map with selected observation wells
+#' Calculate percentile conditions and save data and plots  in directories
 #' @param ows Character vector. Observation well numbers (e.g, "OW000"). Set to NA for all wells (default).
 #' @param report_dates Character vector. Only one date for this function. Default Sys.Date().
 #' @param n_days Numeric. If there is no data on the report date chosen, this is
@@ -22,6 +22,8 @@
 #'   percentiles
 #' @param cache_age Logical. Maximum age in days of cached datasets (not obs well
 #'   data, but metadata related to regional maps, aquifer and wells).
+#' @param csv_dir Folder to save the exported csv file with all gw percentiles
+#' @param plots_dir Folder to save all the static plots
 #'
 #' @export
 
@@ -30,7 +32,6 @@ gw_conditions_save <- function(ows = NA,
                                n_days = 14,
                                years_min = 5,
                                cache_age = 7,
-                               save_plots = FALSE,
                                csv_dir = "",
                                plots_dir = ""){
 
