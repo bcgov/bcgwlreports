@@ -166,7 +166,7 @@ well_map <- function(details, format = "html") {
     leaflet::addCircleMarkers(data = locs_na,
                               color = "black",
                               fillColor = ~perc_pal(class), weight = 1,
-                              fillOpacity = 1, radius = 7,
+                              fillOpacity = 1, radius = 5,
                               popup = ~tooltip, label = ~ow,
                               group = "Not Available Wells",
                               labelOptions = leaflet::labelOptions(
