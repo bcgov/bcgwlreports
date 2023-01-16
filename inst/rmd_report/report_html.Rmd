@@ -159,6 +159,8 @@ In general, a groundwater level value that is:
 * the lowest ever measured for the day of year is considered
 <span style="color: `r perc_values$colour[7]`;">**Low**</span>
 
+Wells classified as "Not Available" in this report do not have recent groundwater level data within the past `r n_days` days or do not have sufficient data (less than `r years_min` years continuous data).
+
 ## Groundwater Level Conditions {#map}
 
 
