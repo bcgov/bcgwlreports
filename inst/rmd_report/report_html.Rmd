@@ -19,6 +19,16 @@ params:
 title: "`r if(!is.null(params$title)) params$title else 'Observation Wells Groundwater Levels'`"
 ---
 
+
+
+
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri(file.path("BCID_V_cmyk_pos_smaller.jpg")),
+               alt = 'logo',
+               style = 'float:right;position: relative; top:0; right:0; padding:0px;')
+```
+
+
 ```{css, echo=FALSE}
 h2 {
 padding-top: 0.2em;
