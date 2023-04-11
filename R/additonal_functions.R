@@ -263,7 +263,7 @@ gw_both_plots <- function(data, ows = NA, water_year_start = 10){
     date <- dplyr::filter(latest_date, ow == !!ow)
 
     min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
-                                       TRUE ~ NA_real_)
+                                       TRUE ~ NA)
     p1 <- well_plot_perc(full, hist, date, years_min, water_year = data$wy, info = paste0(ow, " "), water_year_start = water_year_start)
     p2 <- well_plot_hist(full_all, hist, vline_date = min_daily_date, info = paste0(ow, " "))
 
