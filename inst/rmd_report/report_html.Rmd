@@ -374,7 +374,7 @@ for(r in unique(w_meta$region)) {
     date <- filter(latest_date, ow == !!ow)
     
     min_daily_date <- dplyr::case_when(min(full_all$WaterYear) != min(full$WaterYear) ~ min(full$Date, na.rm = TRUE),
-                                       TRUE ~ NA_real_)
+                                       TRUE ~ NA)
     
     g1 <- well_plot_perc(full, hist, date, years_min, water_year = wy)
     g2 <- well_plot_hist(full_all, hist, vline_date = min_daily_date)
