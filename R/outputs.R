@@ -103,19 +103,21 @@ well_map <- function(details, format = "html") {
         glue::glue("Not Available"),
         glue::glue("{percentile}"))) %>%
     sf::st_transform(4326) %>%
-    dplyr::left_join(region_names, by = "ow") %>%
-    dplyr::mutate(ow_tt = ow_fish(.data$ow))
+    dplyr::left_join(region_names, by = "ow")# %>%
+    #dplyr::mutate(ow_tt = ow_fish(.data$ow))
 
   # If multiple regions, don't link OWs to plots
   if(n_regions == 1) {
-    locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow_tt, format = format))
+    #locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow_tt, format = format))
+    locs <- dplyr::mutate(locs, ow_tt = ow_link(.data$ow, format = format))
   }
 
   locs <- locs %>%
     sf::st_jitter(factor = 0.00008) %>%
     dplyr::mutate(
       tooltip = glue::glue(
-        "<strong>Well</strong>: {.data$ow_tt}<br>",
+       # "<strong>Well</strong>: {.data$ow_tt}<br>",
+        "<strong>Well</strong>: {.data$ow}<br>",
         "<strong>Region</strong>: {.data$region}<br>",
         "<strong>Location</strong>: {.data$location_long}<br>",
         "<strong>Current percentile</strong>: {.data$percentile}"),

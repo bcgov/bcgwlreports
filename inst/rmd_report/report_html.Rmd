@@ -169,7 +169,7 @@ details <- well_table_summary(w_dates, w_hist, perc_values, full_window)
 well_map(details)
 ```
 
-<center> **Note:** `r emo::ji("fish")` = likely hydraulically connected </center>
+<!--<center> **Note:** `r emo::ji("fish")` = likely hydraulically connected </center>-->
 
 <br>
 
@@ -195,7 +195,8 @@ t %>%
 
 ## Wells Below Normal {#wells-below-normal .tabset}
 
-This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.
+This section reports on the number and total proportion of wells below normal or lower (i.e. 25th percentile or lower) on a given reporting date and one year prior for comparison. <!--Hydraulic Connectivity and Aquifer Type categories are inferred based on aquifer subtype. Hydraulic connectivity is not field verified.-->
+
 
 ### All Wells
 
@@ -214,6 +215,7 @@ t %>%
   gt_bcgwl_style()
 ```
 
+<!--
 ### By Hydraulic Connectivity
 
 ```{r wells_below_normal_type, warning=FALSE}
@@ -232,7 +234,7 @@ t %>%
   gt_bcgwl_style()
 ```
 
-
+-->
 
 ### By Aquifer Type
 
@@ -289,19 +291,20 @@ for(r in unique(details$region)) {
       glue("Not Available<br><small>(n = {n_years})</small>")),
       percentile = purrr::map(percentile, html)) %>%
     filter(region == r) %>%
-    select(area, location, ow, hydraulic_connectivity, 
+    select(area, location, ow, #hydraulic_connectivity, 
            aquifer_type, date, percentile, class, approval) %>%
-    left_join(remarks, by = "ow") %>%
+    #left_join(remarks, by = "ow") %>%
     group_by(.data$area) %>%
     gt() %>%
     cols_hide(c("approval", "class")) %>%
     cols_label("location" = "Location",
-               "hydraulic_connectivity" = "Hydraulic Connection", 
+               #"hydraulic_connectivity" = "Hydraulic Connection", 
                "aquifer_type" = "Aquifer Type",
                "date" = "Latest Date" , 
                "percentile" = "Percentile",
-               "ow" = "Obs. Well", 
-               "remarks" = "Remarks") %>%
+               "ow" = "Obs. Well"#, 
+               #"remarks" = "Remarks"
+               ) %>%
     cols_align("center", columns = "ow") %>%
     gt_perc_colours() %>%
     sub_missing(dplyr::everything(), missing_text = "") %>%
@@ -312,7 +315,7 @@ for(r in unique(details$region)) {
     opt_footnote_marks(marks = c("a", "**")) %>%
     text_transform(locations = cells_body(columns = "ow"),
                    fn = function(x) ow_link(x, format = "html")) %>% #ow_fish(x) %>% 
-    cols_align("left", columns = "remarks") %>%
+    #cols_align("left", columns = "remarks") %>%
     gt_bcgwl_style() %>%
     knitr::knit_print() %>%
     cat()
@@ -344,7 +347,8 @@ latest_date <- w_dates %>%
 w_meta <- w_dates %>%
   well_meta() %>%
   select(ow, "aquifer_id", "region", "area", "location", "location_long", 
-         "subtype", "type", "hydraulic_connectivity") %>%
+         "subtype", "type",# "hydraulic_connectivity"
+         ) %>%
   distinct() %>%
   arrange(.data$region, .data$ow)
 
@@ -359,14 +363,16 @@ for(r in unique(w_meta$region)) {
     
     w_meta %>%
       filter(.data$ow %in% !!ow) %>%
-      select("ow", "location_long", "type", "hydraulic_connectivity") %>%
+      select("ow", "location_long", "type"#, "hydraulic_connectivity"
+             ) %>%
       distinct() %>%
-      mutate(ow_fish = ow_fish(ow),
-             ow = ifelse(is.na(ow_fish),ow, ow_fish)) %>%
+      #mutate(ow_fish = ow_fish(ow),
+      #       ow = ifelse(is.na(ow_fish),ow, ow_fish)) %>%
       glue_data("\n\n\n#### {ow}\n\n",  # Map title e.g., OW008
                 "**{location_long}** | **[Map](#map)**   \n",
-                "{ifelse(!is.na(type),type,'No listed')} aquifer",
-                "{ifelse(!is.na(type),paste0(' | ', stringr::str_to_sentence(hydraulic_connectivity),' hydraulically connected\n\n') ,'')} ") %>%
+                "{ifelse(!is.na(type),type,'No listed')} aquifer"#,
+                #"{ifelse(!is.na(type),paste0(' | ', stringr::str_to_sentence(hydraulic_connectivity),' hydraulically connected\n\n') ,'')} "
+                ) %>%
       cat()
     full <- filter(w_full, ow == !!ow)
     full_all <- filter(w_full_all, ow == !!ow)
