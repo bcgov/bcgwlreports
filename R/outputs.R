@@ -147,8 +147,7 @@ well_map <- function(details, format = "html") {
     as.character()
 
   leaflet::leaflet(data = locs) %>%
-    # leaflet::addTiles(group = "OpenStreetMap") %>%
-    leaflet::addProviderTiles(leaflet::providers$Stamen.Terrain, group = "Stamen (Terrain)") %>%
+    leaflet::addTiles(group = "OpenStreetMap") %>%
     leaflet::addProviderTiles(leaflet::providers$Esri.NatGeoWorldMap, group = "ESRI NatGeoWorldMap") %>%
     leaflet::addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "ESRI WorldImagery") %>%
     leaflet::addPolygons(data = nr_regions, group = "NR Regions",
@@ -189,7 +188,7 @@ well_map <- function(details, format = "html") {
                        labels = c(perc_values$nice, "Not Available")) %>%
     leaflet::addLayersControl(
       overlayGroups = c("Wells with Percentiles", "Wells with No Percentiles", "NR Regions","NR Areas"),
-      baseGroups = c("Stamen (Terrain)", "ESRI NatGeoWorldMap","ESRI WorldImagery"),#,"Aquifers"
+      baseGroups = c("OpenStreetMap", "ESRI NatGeoWorldMap","ESRI WorldImagery"),#,"Aquifers"
       position = "topright")%>%
     leaflet::hideGroup(c("Wells with No Percentiles", "NR Areas"))#"OpenStreetMap",
 }
