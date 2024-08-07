@@ -87,6 +87,39 @@ footnotes_below_normal <- function(gt, missing_dates, missing_data,
 
   gt::opt_footnote_marks(gt, marks = marks)
 }
+footnotes_below_normal_new <- function(gt, missing_dates, missing_data,
+                                   n_days = NULL) {
+  foot1 <- glue::glue("(X/Y) indicates X wells with low values out of Y wells ",
+                      "total for that date")
+  foot2 <- "Blank cells indicate no data"
+  foot3 <- glue::glue("Not all wells had data in the reporting window. Includes values ",
+                      "obtained from a {n_days}-day window ending on the ",
+                      "reporting date")
+
+  # First foot
+  gt <- gt::tab_footnote(gt, footnote = foot1,
+                         locations = gt::cells_column_spanners(1))
+  marks <- ""
+
+  # Optional extras
+  if(missing_data) {
+    gt <- gt::tab_footnote(gt, footnote = foot2,
+                           locations = gt::cells_column_spanners(2))
+    marks <- c(marks, "")
+  }
+
+  if(length(missing_dates) > 0) {
+    gt <- gt::tab_footnote(
+      gt, footnote = foot3,
+      locations = gt::cells_column_labels(dplyr::all_of(missing_dates)))
+    marks <- c(marks, "**")
+  }
+
+  # Needs at least two to use custom marks
+  if(length(marks) == 1) marks <- c(marks, "")
+
+  gt::opt_footnote_marks(gt, marks = marks)
+}
 
 
 well_map <- function(details, format = "html") {
@@ -207,7 +240,7 @@ well_plots_base <- function(title = "", legend = "right", caption = NA, subtitle
     ggplot2::scale_x_date(expand = c(0, 0)) +
     ggplot2::scale_fill_manual(
       values = stats::setNames(p_values$colour, p_values$nice)) +
-    ggplot2::labs(x = "Day of Year",
+    ggplot2::labs(x = "Date",
                   y = "Water Level Below Ground (metres)",
                   title = title, subtitle = subtitle)
 
@@ -506,7 +539,7 @@ well_table_summary <- function(w_dates, w_hist, perc_values, full_window, format
       ~dplyr::if_else(is.na(.), NA_character_, sprintf(., fmt = "%#.2f")))) %>%
     dplyr::mutate(
       class = purrr::map_chr(.data$percentile, perc_match, cols = "nice"),
-      percentile = round((1 - .data$percentile) * 100)) %>%
+      percentile = round((1 - .data$percentile) * 100,1)) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(.data$region, .data$area, .data$location, .data$ow) %>%
     dplyr::rename_with(tolower) %>%
