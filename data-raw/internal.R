@@ -24,12 +24,12 @@ perc_colours <- c("black", "blue", "cyan", "green", "#FFCC00", "#800000", "red")
 
 perc_values <- dplyr::tribble(
   ~class,      ~nice,               ~txt_colour, ~low,    ~high,   ~low_show, ~high_show,
-  "p_max",     "High",              "white",     0,       0.00001, 1,         1,
-  "p_v_high",  "Much Above Normal", "white",     0.00001, 0.10,    0.9,       1,
-  "p_m_high",  "Above Normal",      "black",     0.10,    0.25,    0.75,      0.9,
+  "p_max",     "High",              "white",     0,       0,       1.0,       1,
+  "p_v_high",  "Much Above Normal", "white",     0.00001, 0.09999, 0.9,       1,
+  "p_m_high",  "Above Normal",      "black",     0.10,    0.24999, 0.75,      0.9,
   "p_n",       "Normal",            "black",     0.25,    0.75,    0.25,      0.75,
-  "p_m_low",   "Below Normal",      "black",     0.75,    0.9,     0.10,      0.25,
-  "p_v_low",   "Much Below Normal", "white",     0.9,     0.99999, 0,         0.10,
+  "p_m_low",   "Below Normal",      "black",     0.75001, 0.9,     0.10,      0.25,
+  "p_v_low",   "Much Below Normal", "white",     0.90001, 0.99999, 0,         0.10,
   "p_min",     "Low",               "black",     0.99999, 1,       0,         0) %>%
   dplyr::mutate(colour = !!perc_colours)
 
